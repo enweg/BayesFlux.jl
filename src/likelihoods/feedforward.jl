@@ -1,8 +1,8 @@
 using Distributions
 
-##########
-# Normal #
-##########
+################################################################################
+# Normal 
+################################################################################
 
 struct FeedforwardNormal{D<:Distributions.UnivariateDistribution}
     totparams::Int
@@ -20,6 +20,27 @@ function loglike(FN::FeedforwardNormal, θ::AbstractVector, net::C, y::VecOrMat{
     
     return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf(FN.sigprior, sig)
 end
-    
 
+################################################################################
+# T Distribution fixed df 
+################################################################################
+
+struct FeedforwardTDist{D<:Distributions.UnivariateDistribution, T}
+    totparams::Int
+    sigprior::D
+    type::Type
+    nu::T
+end
+function FeedforwardTDist(sigprior::D, nu::T) where {D<:Distributions.UnivariateDistribution, T<:Real}
+    FeedforwardTDist(1, sigprior, T, nu)
+end
+
+function loglike(FT::FeedforwardTDist, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real}
+    yhat = vec(net(x))
+    tsid = θ[1]
+    sig = T(inverse(bijector(FT.sigprior))(tsig))
+    N = length(y)
+
+    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf(FN.sigprior, sig)
+end
     
