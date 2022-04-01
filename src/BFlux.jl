@@ -9,7 +9,7 @@ include("./likelihoods/seq_to_one.jl")
 export BNN, BLayer
 export lp, reconstruct_sample
 export FeedforwardNormal, FeedforwardTDist
-export SeqToOneNormal
+export SeqToOneNormal, SeqToOneTDist
 
 
 end # module
