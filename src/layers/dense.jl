@@ -2,46 +2,46 @@ using Flux, Random, Distributions
 using Optimisers
 using Bijectors
 
-###################
-# Dense: standard #
-###################
+################################################################################
+# Dense: standard 
+################################################################################
 
 alphadist(::Val{Flux.Dense}, T::Type) = Gamma(T(1.0), T(1.0))
 
 function retransform(::Val{Flux.Dense}, T::Type,  β::AbstractVector)
-    # only transformed parameter is the first
-    tα = β[1] 
+    tα = β[1:Int(length(β)/2)] 
     pα = alphadist(Val(Flux.Dense), T)
     # Fix type instability issue
-    α = T(inverse(bijector(pα))(tα))
-    return vcat(α, β[2:end])
+    α = T.(inverse(bijector(pα)).(tα))
+    return vcat(α, β[Int(length(β)/2)+1:end])
 end
 
 function logprior(::Val{Flux.Dense}, T::Type, β::AbstractVector)
-    # first one is hyper variance transformed by taking log 
+    # all parameters have their own hyper prior on variance
+    # This is the same hyperprior for all
     pα = alphadist(Val(Flux.Dense), T)
     β = retransform(Val(Flux.Dense), T, β)
-    α = β[1]
-    θ = β[2:end]
+    α = β[1:Int(length(β)/2)]
+    θ = β[Int(length(β)/2)+1:end]
 
-    return sum(logpdf.(Normal(zero(T), α), θ)) + logpdf(pα, α)
+    return sum(logpdf.(Normal.(zero(T), α), θ)) + sum(logpdf.(pα, α))
 end
 
 function sample(layer::Flux.Dense)
     θ, re = Flux.destructure(layer)
     T = eltype(θ)
     # Fixing type instability issue when sampling from Gamma
-    α = T(rand(alphadist(Val(Flux.Dense), T)))
-    θ = rand(Normal(zero(T), α), length(θ))
+    α = T.(rand(alphadist(Val(Flux.Dense), T), length(θ)))
+    θ = rand.(Normal.(zero(T), α))
     return re(θ)
 end
 
-get_network_params(::Val{Flux.Dense}, θ::AbstractVector) = θ[2:end]
+get_network_params(::Val{Flux.Dense}, θ::AbstractVector) = θ[Int(length(θ)/2)+1:end]
 
 function BLayer(layer::Flux.Dense)
     θ, _ = Flux.destructure(layer)
     T = eltype(θ)
-    totparams = length(θ) + 1 # one for the hyper variance prior
+    totparams = length(θ)*2 # each parameter has a hyper parameter for the variance
     lp(β) = logprior(Val(Flux.Dense), T, β)
     resamples(β) = retransform(Val(Flux.Dense), T, β)
     sampler() = sample(layer)

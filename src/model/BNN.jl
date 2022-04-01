@@ -72,18 +72,17 @@ function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
         logprior += bl.lp(β)
     end
 
-    # return logprior + loglike(bnn.loglikelihood, loglike_θ, net, bnn.y, bnn.x)
-    return sum(logpdf.(Normal.(vec(net(bnn.x)), 1.0), bnn.y))
+    return logprior + loglike(bnn.loglikelihood, loglike_θ, net, bnn.y, bnn.x)
 end
 
-function reconstruct_sample(bnn::B, θ::AbstractVector) where {B<:BNN}
-    s = 1
-    θ_rec = similar(θ)
-    for bl in bnn.blayers
-        nparams = bl.nparams 
-        e = s + nparams - 1
-        θ_rec[s:e] .= bl.resamples(view(θ, s:e))
-        s += nparams
-    end
-    return θ_rec
-end
+# function reconstruct_sample(bnn::B, θ::AbstractVector) where {B<:BNN}
+#     s = 1
+#     θ_rec = similar(θ)
+#     for bl in bnn.blayers
+#         nparams = bl.nparams 
+#         e = s + nparams - 1
+#         θ_rec[s:e] .= bl.resamples(view(θ, s:e))
+#         s += nparams
+#     end
+#     return θ_rec
+# end

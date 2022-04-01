@@ -13,7 +13,7 @@ function FeedforwardNormal(sigprior::D, type::Type) where {D<:Distributions.Univ
     FeedforwardNormal(1, sigprior, type)
 end
 
-function loglike(FN::FeedforwardNormal, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real}
+function loglike(FN::FeedforwardNormal{D}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
     yhat = vec(net(x))
     tsig = θ[1]
     sig = T(inverse(bijector(FN.sigprior))(tsig))
@@ -35,12 +35,12 @@ function FeedforwardTDist(sigprior::D, nu::T) where {D<:Distributions.Univariate
     FeedforwardTDist(1, sigprior, T, nu)
 end
 
-function loglike(FT::FeedforwardTDist, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real}
+function loglike(FT::FeedforwardTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
     yhat = vec(net(x))
-    tsid = θ[1]
+    tsig = θ[1]
     sig = T(inverse(bijector(FT.sigprior))(tsig))
     N = length(y)
 
-    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf(FN.sigprior, sig)
+    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf(FT.sigprior, sig)
 end
     
