@@ -144,7 +144,7 @@ lp(bnn, θ)
 
 th = BFlux.get_network_params(bnn, θ)
 nethat = bnn.re(th)
-yhat = vec(nethat(x))
+yhat = vec([nethat(xx) for xx in x][end])
 plot(y, label = "y")
 plot!(yhat, lebel = "yhat")
 
