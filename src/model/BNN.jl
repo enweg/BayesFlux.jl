@@ -1,6 +1,23 @@
 using Flux, Distributions, Random
 using Zygote
 
+function destruct(net::Flux.Chain{T}) where {T}
+    θre = [destruct(layer) for layer in net]
+    θ = vcat([item[1] for item in θre]...)
+    buf = Zygote.Buffer(ones(Int64, length(θre)), length(θre), 2)
+    s = 1
+    for i=1:length(θre)
+        e = s + length(θre[i][1]) - 1
+        buf[i, :] = [s, e]
+        s += length(θre[i][1])
+    end
+    buf = copy(buf)
+    function re(θ::AbstractVector)
+        return Flux.Chain([θre[i][2](θ[buf[i, 1]:buf[i,2]]) for i=1:length(θre)]...)
+    end
+    return θ, re
+end
+
 struct BLayer{U, NP, F, V, S}
     unit::U
     gnp::NP
@@ -24,7 +41,7 @@ struct BNN{C<:Flux.Chain, R, B<:BLayer, F, Ty, Tx}
 end
 
 function BNN(net::C, loglike::F, y::Ty, x::Tx) where {C<:Flux.Chain, F, Ty, Tx}
-    θ, re = Flux.destructure(net)
+    θ, re = destruct(net)
     blayers = [BLayer(layer) for layer in net]
     totparams = sum([bl.totparams for bl in blayers]) + loglike.totparams
     nparams = sum([bl.nparams for bl in blayers])

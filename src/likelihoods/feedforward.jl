@@ -18,7 +18,7 @@ function loglike(FN::FeedforwardNormal{D}, θ::AbstractVector, net::C, y::VecOrM
     tsig = θ[1]
     sig = T(inverse(bijector(FN.sigprior))(tsig))
     
-    return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf(FN.sigprior, sig)
+    return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf_with_trans(FN.sigprior, sig, true)
 end
 
 ################################################################################
@@ -41,6 +41,6 @@ function loglike(FT::FeedforwardTDist{D, R}, θ::AbstractVector, net::C, y::VecO
     sig = T(inverse(bijector(FT.sigprior))(tsig))
     N = length(y)
 
-    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf(FT.sigprior, sig)
+    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(FT.sigprior, sig, true)
 end
     
