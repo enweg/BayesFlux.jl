@@ -15,7 +15,14 @@ struct LaplaceApproximation{D<:Distributions.MultivariateNormal, W<:StatsBase.Ab
 end
 length(s::LaplaceApproximation) = length(s.dists[1].μ)
 function _rand!(rng::AbstractRNG, s::LaplaceApproximation, x::AbstractVector{<:Real})
-    x .= rand(rng, StatsBase.sample(s.dists, s.w))
+    dists, w = s.dists, s.w
+    if !all(s.c)
+        @warn "not all approximations have converged. Only sampling from converged ones"
+        sum(s.c)==0 && error("No apprixomation has converged. Run apprixmation for longer")
+        dists = s.dists[s.c]
+        w = StatsBase.ProbabilityWeights(s.w.values[s.c] ./ sum(s.w.values[s.c]))
+    end
+    x .= rand(rng, StatsBase.sample(dists, w))
 end
 
 
