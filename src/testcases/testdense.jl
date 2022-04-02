@@ -1,7 +1,8 @@
 using QuickBNN, Flux, Zygote, Distributions, StatsPlots
 using BFlux
+using Random
 
-ar1 = AR([0.5])
+ar1 = AR([0.5]; rng = Random.MersenneTwister(6150533))
 y = ar1(;N=100);
 x = hcat(y[1:end-1]...);
 y = y[2:end];
@@ -90,7 +91,9 @@ bnn = BFlux.BNN(net, loglike, y, x)
 θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
 la = laplace(bnn, 10_000, 20; diag = true, opt = Flux.ADADelta()) # using 20 modes
 all(la.c) # did all converge? 
-draws = rand(la, 10_000)
+# Sampling Importance Sampling correction 
+draws = SIR_laplace(bnn, la, 100_000, 10_000)
+draws = hcat(draws...)
 histogram(draws[end-1, :])
 
 th = BFlux.get_network_params.([bnn], eachcol(draws))
@@ -99,7 +102,7 @@ predict(net, x) = vec(net(x))
 yhats = hcat([predict(nn, bnn.x) for nn in nethats]...)
 p = plot(y, legend = false, color = :black, linewidth = 3.0)
 for i=1:1000
-    plot!(p, yhats[:,i], color = :red, alpha = 0.01)
+    plot!(p, yhats[:,i], color = :red, alpha = 0.1)
 end
 p
 
@@ -112,7 +115,9 @@ bnn = BFlux.BNN(net, loglike, y, x)
 θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
 la = laplace(bnn, 10_000, 20; diag = true, opt = Flux.ADADelta()) # using 20 modes
 all(la.c) # did all converge? 
-draws = rand(la, 10_000)
+# Sampling Importance Sampling correction 
+draws = SIR_laplace(bnn, la, 100_000, 10_000)
+draws = hcat(draws...)
 histogram(draws[end-1, :])
 
 th = BFlux.get_network_params.([bnn], eachcol(draws))
@@ -134,7 +139,9 @@ bnn = BFlux.BNN(net, loglike, y, x)
 θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
 la = laplace(bnn, 10_000, 20; diag = true, opt = Flux.ADADelta()) # using 20 modes
 all(la.c) # did all converge? 
-draws = rand(la, 10_000)
+# Sampling Importance Sampling correction 
+draws = SIR_laplace(bnn, la, 1_000_000, 1_000)
+draws = hcat(draws...)
 histogram(draws[end-1, :])
 
 th = BFlux.get_network_params.([bnn], eachcol(draws))

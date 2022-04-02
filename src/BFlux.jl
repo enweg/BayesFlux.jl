@@ -18,6 +18,6 @@ export lp, reconstruct_sample
 export FeedforwardNormal, FeedforwardTDist
 export SeqToOneNormal, SeqToOneTDist
 export find_mode
-export laplace
+export laplace, SIR_laplace
 
 end # module

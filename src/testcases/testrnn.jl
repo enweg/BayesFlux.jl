@@ -90,21 +90,23 @@ net = Chain(RNN(1, 1))
 loglike = SeqToOneTDist(Gamma(1.0, 1.0), 5.0)
 bnn = BFlux.BNN(net, loglike, y, x)
 
-using ProgressBars
-opt = Flux.ADAGrad()
-θ = randn(bnn.totparams)
-lp(bnn, θ)
-for i in ProgressBar(1:10_000)
-    g = Zygote.gradient(θ -> lp(bnn, θ), θ)
-    Flux.update!(opt, θ, -g[1])
-end
-lp(bnn, θ)
+θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
+la = laplace(bnn, 10_000, 20; diag = true, opt = Flux.ADADelta()) # using 20 modes
+all(la.c) # did all converge? 
+# Sampling Importance Sampling correction 
+draws = SIR_laplace(bnn, la, 100_000, 10_000)
+draws = hcat(draws...)
+histogram(draws[end-1, :])
 
-th = BFlux.get_network_params(bnn, θ)
-nethat = bnn.re(th)
-yhat = vec([nethat(xx) for xx in x][end])
-plot(y, label = "y")
-plot!(yhat, lebel = "yhat")
+th = BFlux.get_network_params.([bnn], eachcol(draws))
+nethats = bnn.re.(th)
+predict(net, x) = vec([net(xx) for xx in x][end])
+yhats = hcat([predict(nn, bnn.x) for nn in nethats]...)
+p = plot(y, legend = false, color = :black, linewidth = 3.0)
+for i=1:1000
+    plot!(p, yhats[:,i], color = :red, alpha = 0.1)
+end
+p
 
 ################################################################################
 # two layer testcase
@@ -112,20 +114,23 @@ net = Chain(RNN(1, 1), Dense(1, 1))
 loglike = SeqToOneTDist(Gamma(1.0, 1.0), 5.0)
 bnn = BFlux.BNN(net, loglike, y, x)
 
-opt = Flux.ADAGrad()
-θ = randn(bnn.totparams)
-lp(bnn, θ)
-for i in ProgressBar(1:10_000)
-    g = Zygote.gradient(θ -> lp(bnn, θ), θ)
-    Flux.update!(opt, θ, -g[1])
-end
-lp(bnn, θ)
+θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
+la = laplace(bnn, 10_000, 20; diag = true, opt = Flux.ADADelta()) # using 20 modes
+all(la.c) # did all converge? 
+# Sampling Importance Sampling correction 
+draws = SIR_laplace(bnn, la, 100_000, 10_000)
+draws = hcat(draws...)
+histogram(draws[end-1, :])
 
-th = BFlux.get_network_params(bnn, θ)
-nethat = bnn.re(th)
-yhat = vec([nethat(xx) for xx in x][end])
-plot(y, label = "y")
-plot!(yhat, lebel = "yhat")
+th = BFlux.get_network_params.([bnn], eachcol(draws))
+nethats = bnn.re.(th)
+predict(net, x) = vec([net(xx) for xx in x][end])
+yhats = hcat([predict(nn, bnn.x) for nn in nethats]...)
+p = plot(y, legend = false, color = :black, linewidth = 3.0)
+for i=1:1000
+    plot!(p, yhats[:,i], color = :red, alpha = 0.1)
+end
+p
 
 ################################################################################
 # larger network 
@@ -133,18 +138,20 @@ net = Chain(RNN(1, 10), Dense(10, 1))
 loglike = SeqToOneTDist(Gamma(1.0, 1.0), 5.0)
 bnn = BFlux.BNN(net, loglike, y, x)
 
-opt = Flux.ADAGrad()
-θ = randn(bnn.totparams)
-lp(bnn, θ)
-for i in ProgressBar(1:10_000)
-    g = Zygote.gradient(θ -> lp(bnn, θ), θ)
-    Flux.update!(opt, θ, -g[1])
+θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
+la = laplace(bnn, 10_000, 20; diag = true, opt = Flux.ADADelta()) # using 20 modes
+all(la.c) # did all converge? 
+# Sampling Importance Sampling correction 
+draws = SIR_laplace(bnn, la, 100_000, 10_000)
+draws = hcat(draws...)
+histogram(draws[end-1, :])
+
+th = BFlux.get_network_params.([bnn], eachcol(draws))
+nethats = bnn.re.(th)
+predict(net, x) = vec([net(xx) for xx in x][end])
+yhats = hcat([predict(nn, bnn.x) for nn in nethats]...)
+p = plot(y, legend = false, color = :black, linewidth = 3.0)
+for i=1:1000
+    plot!(p, yhats[:,i], color = :red, alpha = 0.1)
 end
-lp(bnn, θ)
-
-th = BFlux.get_network_params(bnn, θ)
-nethat = bnn.re(th)
-yhat = vec([nethat(xx) for xx in x][end])
-plot(y, label = "y")
-plot!(yhat, lebel = "yhat")
-
+p

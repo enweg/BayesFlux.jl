@@ -37,8 +37,9 @@ function laplace(bnn::BNN, maxiter::Int, ϵ::Float64=0.01; init_θ = randn(bnn.t
         error("Hessian was not positive definite. Try using a diagonal approximation")
     end
 
-    weight = diag ? det(diagm(Hinv)) : det(Hinv)
-    weight *= lp(bnn, θ)
+    # weight = diag ? sqrt(abs(det(diagm(Hinv)))) : sqrt(abs(det(Hinv)))
+    # weight *= lp(bnn, θ)
+    weight = 1.0
 
     return MvNormal(θ, Hinv), weight, conv
 end
@@ -65,4 +66,24 @@ function laplace(bnn::BNN, maxiter::Int, M::Int, args...; kwargs...)
         Threads.unlock(l)
     end
     return LaplaceApproximation(dists, StatsBase.ProbabilityWeights(weights ./ sum(weights)), conv)
+end
+
+function SIR_laplace(bnn::BNN, la::LaplaceApproximation, n::Int, k::Int)
+    # Sampling Importance Resampling of Laplace approximation
+    sum(la.c) == 0 && error("No laplace approximation converged. Consider running them for longer.")
+    !all(la.c) && @warn "Not all laplace approximation converged. Will only used converged ones."
+
+    dists = la.dists[la.c]
+
+    initial_samples = ones(bnn.totparams, n)
+    weights = ones(n)
+    Threads.@threads for i=1:n 
+        d = StatsBase.sample(dists)
+        s = rand(d)
+        w = exp(lp(bnn, s) - logpdf(d, s))
+        initial_samples[:,i] = s
+        weights[i] = w 
+    end
+
+    return StatsBase.sample(collect(eachcol(initial_samples)), StatsBase.ProbabilityWeights(weights), k; replace = false)
 end
