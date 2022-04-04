@@ -13,7 +13,9 @@ function FeedforwardNormal(sigprior::D, type::Type) where {D<:Distributions.Univ
     FeedforwardNormal(1, sigprior, type)
 end
 
-function loglike(FN::FeedforwardNormal{D}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
+function loglike(bnn::BNN, FN::FeedforwardNormal{D}, θ::AbstractVector, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
+    net_params = get_network_params(bnn, θ)
+    net = bnn.re(net_params)
     θ = θ[1:FN.totparams]
     yhat = vec(net(x))
     tsig = θ[1]
@@ -36,7 +38,9 @@ function FeedforwardTDist(sigprior::D, nu::T) where {D<:Distributions.Univariate
     FeedforwardTDist(1, sigprior, T, nu)
 end
 
-function loglike(FT::FeedforwardTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+function loglike(bnn::BNN, FT::FeedforwardTDist{D, R}, θ::AbstractVector, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+    net_params = get_network_params(bnn, θ)
+    net = bnn.re(net_params)
     θ = θ[1:FT.totparams]
     yhat = vec(net(x))
     tsig = θ[1]

@@ -89,10 +89,7 @@ function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
 end
 
 function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, y::Vector{T}) where {B<:BNN, T<:Real}
-    net_parameters = get_network_params(bnn, θ)
-    net = bnn.re(net_parameters)
-
-    return lprior(bnn, θ) + loglike(bnn.loglikelihood, θ, net, y, x)
+    return lprior(bnn, θ) + loglike(bnn, bnn.loglikelihood, θ, y, x)
 end
 
 # function reconstruct_sample(bnn::B, θ::AbstractVector) where {B<:BNN}

@@ -14,7 +14,9 @@ function SeqToOneNormal(sigprior::D, type::Type) where {D<:Distributions.Univari
     SeqToOneNormal(1, sigprior, type)
 end
 
-function loglike(STON::SeqToOneNormal{D}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
+function loglike(bnn::BNN, STON::SeqToOneNormal{D}, θ::AbstractVector, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
+    net_params = get_network_params(bnn, θ)
+    net = bnn.re(net_params)
     θ = θ[1:STON.totparams]
     Flux.reset!(net)
     yhat = vec([net(xx) for xx in x][end])
@@ -39,7 +41,9 @@ function SeqToOneTDist(sigprior::D, nu::T) where {D<:Distributions.UnivariateDis
     SeqToOneTDist(1, sigprior, T, nu)
 end
 
-function loglike(STOT::SeqToOneTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+function loglike(bnn::BNN, STOT::SeqToOneTDist{D, R}, θ::AbstractVector, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+    net_params = get_network_params(bnn, θ)
+    net = bnn.re(net_params)
     θ = θ[1:STOT.totparams]
     Flux.reset!(net)
     yhat = vec([net(xx) for xx in x][end])
