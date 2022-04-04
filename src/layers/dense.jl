@@ -28,7 +28,6 @@ function retransform(::Val{Flux.Dense}, T::Type,  β::AbstractVector)
     tα = β[1:Int(length(β)/2)] 
     pα = alphadist(Val(Flux.Dense), T)
     # Fix type instability issue
-    # α = T.(inverse(bijector(pα)).(tα))
     α = T.(invlink.(pα, tα))
     return vcat(α, β[Int(length(β)/2)+1:end])
 end
