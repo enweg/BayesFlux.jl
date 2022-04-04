@@ -14,6 +14,7 @@ function FeedforwardNormal(sigprior::D, type::Type) where {D<:Distributions.Univ
 end
 
 function loglike(FN::FeedforwardNormal{D}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
+    θ = θ[1:FN.totparams]
     yhat = vec(net(x))
     tsig = θ[1]
     sig = T(invlink(FN.sigprior, tsig))
@@ -36,6 +37,7 @@ function FeedforwardTDist(sigprior::D, nu::T) where {D<:Distributions.Univariate
 end
 
 function loglike(FT::FeedforwardTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+    θ = θ[1:FT.totparams]
     yhat = vec(net(x))
     tsig = θ[1]
     sig = T(invlink(FT.sigprior, tsig))

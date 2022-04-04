@@ -15,6 +15,7 @@ function SeqToOneNormal(sigprior::D, type::Type) where {D<:Distributions.Univari
 end
 
 function loglike(STON::SeqToOneNormal{D}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
+    θ = θ[1:STON.totparams]
     Flux.reset!(net)
     yhat = vec([net(xx) for xx in x][end])
     tsig = θ[1]
@@ -38,12 +39,13 @@ function SeqToOneTDist(sigprior::D, nu::T) where {D<:Distributions.UnivariateDis
     SeqToOneTDist(1, sigprior, T, nu)
 end
 
-function loglike(FT::SeqToOneTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+function loglike(STOT::SeqToOneTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
+    θ = θ[1:STOT.totparams]
     Flux.reset!(net)
     yhat = vec([net(xx) for xx in x][end])
     tsig = θ[1]
-    sig = T(invlink(FT.sigprior, tsig))
+    sig = T(invlink(STOT.sigprior, tsig))
     N = length(y)
 
-    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(FT.sigprior, sig, true)
+    return sum(logpdf.(TDist(STOT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(STOT.sigprior, sig, true)
 end
