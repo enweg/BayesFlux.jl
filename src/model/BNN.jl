@@ -67,9 +67,11 @@ function get_network_params(bnn::B, θ::AbstractVector) where {B<:BNN}
     return copy(network_params)
 end
 
-
 function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
-    T = bnn.type 
+    return lp(bnn, θ, bnn.x, bnn.y)
+end
+
+function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, y::Vector{T}) where {B<:BNN, T<:Real}
     net_parameters = get_network_params(bnn, θ)
     net = bnn.re(net_parameters)
 
@@ -89,7 +91,7 @@ function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
         logprior += bl.lp(β)
     end
 
-    return logprior + loglike(bnn.loglikelihood, loglike_θ, net, bnn.y, bnn.x)
+    return logprior + loglike(bnn.loglikelihood, loglike_θ, net, y, x)
 end
 
 # function reconstruct_sample(bnn::B, θ::AbstractVector) where {B<:BNN}
