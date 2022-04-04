@@ -18,7 +18,7 @@ function loglike(STON::SeqToOneNormal{D}, θ::AbstractVector, net::C, y::VecOrMa
     Flux.reset!(net)
     yhat = vec([net(xx) for xx in x][end])
     tsig = θ[1]
-    sig = T(inverse(bijector(STON.sigprior))(tsig))
+    sig = T(invlink(STON.sigprior, tsig))
 
     return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf_with_trans(STON.sigprior, sig, true)
 end
@@ -42,7 +42,7 @@ function loglike(FT::SeqToOneTDist{D, R}, θ::AbstractVector, net::C, y::VecOrMa
     Flux.reset!(net)
     yhat = vec([net(xx) for xx in x][end])
     tsig = θ[1]
-    sig = T(inverse(bijector(FT.sigprior))(tsig))
+    sig = T(invlink(FT.sigprior, tsig))
     N = length(y)
 
     return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(FT.sigprior, sig, true)

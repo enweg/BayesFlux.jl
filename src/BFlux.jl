@@ -10,7 +10,9 @@ include("./sampling/laplace.jl")
 
 ###### These are for testing
 include("./sampling/nuts_test.jl")
+include("./sampling/bbb_test.jl")
 export sample_nuts
+export bbb_test
 
 ###### Exports
 export BNN, BLayer

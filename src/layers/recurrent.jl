@@ -34,7 +34,7 @@ function retransform(::Val{Flux.RNN}, T::Type,  β::AbstractVector)
     tα = β[1:Int(length(β)/2)] 
     pα = alphadist(Val(Flux.RNN), T)
     # Fix type instability issue
-    α = T.(inverse(bijector(pα)).(tα))
+    α = T.(invlink(pα, tα))
     return vcat(α, β[Int(length(β)/2)+1:end])
 end
 
@@ -109,7 +109,7 @@ function retransform(::Val{Flux.LSTM}, T::Type,  β::AbstractVector)
     tα = β[1:Int(length(β)/2)] 
     pα = alphadist(Val(Flux.LSTM), T)
     # Fix type instability issue
-    α = T.(inverse(bijector(pα)).(tα))
+    α = T.(invlink(pα, tα))
     return vcat(α, β[Int(length(β)/2)+1:end])
 end
 
