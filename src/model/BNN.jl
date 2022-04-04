@@ -67,21 +67,10 @@ function get_network_params(bnn::B, θ::AbstractVector) where {B<:BNN}
     return copy(network_params)
 end
 
-function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
-    return lp(bnn, θ, bnn.x, bnn.y)
-end
-
-function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, y::Vector{T}) where {B<:BNN, T<:Real}
-    net_parameters = get_network_params(bnn, θ)
-    net = bnn.re(net_parameters)
-
-    loglike_θ = zero(T) 
-    if (bnn.loglikelihood.totparams > 0)
-        loglike_θ = θ[1:bnn.loglikelihood.totparams]
-        θ = θ[bnn.loglikelihood.totparams+1:end]
-    end
+function lprior(bnn::BNN, θ::AbstractVector)
+    θ = θ[bnn.loglikelihood.totparams+1:end]
+    T = bnn.type
     logprior = zero(T)
-
     s = 1
     for bl in bnn.blayers 
         totparams = bl.totparams
@@ -90,8 +79,20 @@ function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, 
         s += totparams 
         logprior += bl.lp(β)
     end
+    
+    return logprior
+end
 
-    return logprior + loglike(bnn.loglikelihood, loglike_θ, net, y, x)
+
+function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
+    return lp(bnn, θ, bnn.x, bnn.y)
+end
+
+function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, y::Vector{T}) where {B<:BNN, T<:Real}
+    net_parameters = get_network_params(bnn, θ)
+    net = bnn.re(net_parameters)
+
+    return lprior(bnn, θ) + loglike(bnn.loglikelihood, θ[1:bnn.loglikelihood.totparams], net, y, x)
 end
 
 # function reconstruct_sample(bnn::B, θ::AbstractVector) where {B<:BNN}
