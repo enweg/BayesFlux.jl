@@ -20,7 +20,7 @@ export BNN, BLayer
 export lp, reconstruct_sample
 export FeedforwardNormal, FeedforwardTDist
 export SeqToOneNormal, SeqToOneTDist
-export find_mode
+export find_mode, find_mode_sgd
 export laplace, SIR_laplace
 export advi
 
