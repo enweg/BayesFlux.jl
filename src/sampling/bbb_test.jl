@@ -37,13 +37,37 @@ end
 
 function vec_to_ltri(v::Vector{T}) where {T<:Real}
     cols = Int(-1/2 + sqrt(1+8*length(v))/2)
-    ltri = Matrix{T}(undef, cols, cols)
+    ltri = Zygote.Buffer(ones(T), cols, cols)
+    # ltri = Matrix{T}(undef, cols, cols)
     k = 1
     for i=1:cols for j=1:cols
         ltri[i, j] = i >= j ? v[k] : 0
         k += i >= j ? 1 : 0
     end end
-    return ltri
+    return LinearAlgebra.LowerTriangular(copy(ltri))
+end
+
+
+function bbb_grad1(ψ, ϵ, n)
+    μ = ψ[1:n]
+    ltri = vec_to_ltri(ψ[n+1:end])
+    θs = [μ .+ ltri * ϵi for ϵi in ϵ]
+    d = MvNormal(μ, Symmetric(ltri*ltri'))
+    return mean(logpdf.([d], θs))
+end
+
+function bbb_grad2(bnn, ψ, ϵ, n)
+    μ = ψ[1:n]
+    ltri = vec_to_ltri(ψ[n+1:end])
+    θs = [μ .+ ltri * ϵi for ϵi in ϵ]
+    return mean(loglike.([bnn], [bnn.loglikelihood], θs, [bnn.y], [bnn.x])) 
+end
+
+function bbb_grad3(bnn, ψ, ϵ, n)
+    μ = ψ[1:n]
+    ltri = vec_to_ltri(ψ[n+1:end])
+    θs = [μ .+ ltri * ϵi for ϵi in ϵ]
+    return mean(lprior.([bnn], θs)) 
 end
 
 
@@ -55,8 +79,10 @@ function bbb_test_repara(bnn::BNN, maxiters::Int, samples::Int = 10;showprogress
     @info "Using $samples samples per interator"
     μ = zeros(bnn.totparams)
     Σdiag = log.(ones(bnn.totparams))
-    ψ = vcat(μ, Σdiag)
-    n = Int(length(ψ)/2)
+    n = bnn.totparams
+    Σ = randn(Int(n*(n+1)/2))
+    
+    ψ = vcat(μ, Σ)
     iterator = showprogress ? ProgressBar(1:maxiters) : 1:maxiters
     opt = Flux.ADAM()
 
@@ -67,9 +93,21 @@ function bbb_test_repara(bnn::BNN, maxiters::Int, samples::Int = 10;showprogress
     for t in iterator
         ϵ = rand(MvNormal(zeros(n), ones(n)), samples)
         ϵ = collect(eachcol(ϵ))
-        v1, g1 = Zygote.withgradient(ψ -> mean(logpdf.([MvNormal(ψ[1:n], exp.(ψ[n+1:end]))], [ψ[1:n] .+ exp.(ψ[n+1:end]) .* ϵi for ϵi in ϵ])), ψ)
-        v2, g2 = Zygote.withgradient(ψ -> mean(loglike.([bnn], [bnn.loglikelihood], [ψ[1:n] .+ exp.(ψ[n+1:end]) .* ϵi for ϵi in ϵ], [bnn.y], [bnn.x])), ψ)
-        v3, g3 = Zygote.withgradient(ψ -> mean(lprior.([bnn], [ψ[1:n] .+ exp.(ψ[n+1:end]) .* ϵi for ϵi in ϵ])), ψ)
+        # try
+        #     sig = vec_to_ltri(exp.(ψ[n+1:end]))*vec_to_ltri(exp.(ψ[n+1:end]))'
+        #     cholesky(sig)
+        # catch
+        #     sig = vec_to_ltri(exp.(ψ[n+1:end]))*vec_to_ltri(exp.(ψ[n+1:end]))'
+        #     println("Something went wrong during cholesky")
+        #     println("$sig")
+        # end
+        
+        # v1, g1 = Zygote.withgradient(ψ -> mean(logpdf.([MvNormal(ψ[1:n], Symmetric(vec_to_ltri(exp.(ψ[n+1:end]))*vec_to_ltri(exp.(ψ[n+1:end]))'))], [ψ[1:n] .+ vec_to_ltri(exp.(ψ[n+1:end])) * ϵi for ϵi in ϵ])), ψ)
+        # v2, g2 = Zygote.withgradient(ψ -> mean(loglike.([bnn], [bnn.loglikelihood], [ψ[1:n] .+ vec_to_ltri(exp.(ψ[n+1:end])) * ϵi for ϵi in ϵ], [bnn.y], [bnn.x])), ψ)
+        # v3, g3 = Zygote.withgradient(ψ -> mean(lprior.([bnn], [ψ[1:n] .+ vec_to_ltri(exp.(ψ[n+1:end])) * ϵi for ϵi in ϵ])), ψ)
+        v1, g1 = Zygote.withgradient(ψ -> bbb_grad1(ψ, ϵ, n), ψ)
+        v2, g2 = Zygote.withgradient(ψ -> bbb_grad2(bnn, ψ, ϵ, n), ψ)
+        v3, g3 = Zygote.withgradient(ψ -> bbb_grad3(bnn, ψ, ϵ, n), ψ)
 
         loss = v1 - v2 - v3
         raindex = mod(t, windowlength) + 1
@@ -80,11 +118,11 @@ function bbb_test_repara(bnn::BNN, maxiters::Int, samples::Int = 10;showprogress
         end
 
         Flux.update!(opt, ψ, g)
-        if t>windowlength+1 && abs(losses[t-windowlength]/losses[t-windowlength-1] - 1) < 0.000000001
+        if t>windowlength+1 && abs(losses[t-windowlength]/losses[t-windowlength-1] - 1) < 0.0000000001
             @info "Converged in iteration $t"
-            return MvNormal(ψ[1:n], exp.(ψ[n+1:end])), losses[1:t]
+            return MvNormal(ψ[1:n], Symmetric(vec_to_ltri(exp.(ψ[n+1:end]))*vec_to_ltri(exp.(ψ[n+1:end]))')), losses[1:t-windowlength]
         end
     end
         
-    return MvNormal(ψ[1:n], exp.(ψ[n+1:end])), losses
+    return MvNormal(ψ[1:n], Symmetric(vec_to_ltri(exp.(ψ[n+1:end]))*vec_to_ltri(exp.(ψ[n+1:end]))')), losses
 end
