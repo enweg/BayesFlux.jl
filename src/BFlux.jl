@@ -8,6 +8,7 @@ include("./likelihoods/seq_to_one.jl")
 include("./optimise/modes.jl")
 include("./sampling/laplace.jl")
 include("./sampling/advi.jl")
+include("./sampling/bbb.jl")
 
 ###### These are for testing
 include("./sampling/nuts_test.jl")
