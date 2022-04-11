@@ -55,7 +55,7 @@ function find_mode_sgd(llike, lpriorθ, batchsize::Int, y::Vector{T}, x::Union{V
     ljrunningaverage = zeros(ralength)
     ljrunningaverage[1] = lj
 
-    yshuffel, xshuffel = sgd_shuffle(y, x) 
+    # yshuffel, xshuffel = sgd_shuffle(y, x) 
     if mod(length(y), batchsize) != 0
         @warn "Batchsize does not properly partition data. Some data will be left out in each cycle."
     end
@@ -64,6 +64,7 @@ function find_mode_sgd(llike, lpriorθ, batchsize::Int, y::Vector{T}, x::Union{V
     p = Progress(maxiter * num_batches, 1, "Finding mode ...")
 
     for t=1:maxiter
+        yshuffel, xshuffel = sgd_shuffle(y, x) 
         gprior = Zygote.gradient(lpriorθ, θ)[1]
         for b=1:num_batches 
             xbatch = sgd_x_batch(xshuffel, b, batchsize)

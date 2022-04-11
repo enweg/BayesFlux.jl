@@ -9,12 +9,11 @@ include("./optimise/modes.jl")
 include("./sampling/laplace.jl")
 include("./sampling/advi.jl")
 include("./sampling/bbb.jl")
+include("./sampling/sgld.jl")
 
 ###### These are for testing
 include("./sampling/nuts_test.jl")
-include("./sampling/bbb_test.jl")
 export sample_nuts
-export bbb_test
 
 ###### Exports
 export BNN, BLayer
@@ -23,6 +22,7 @@ export FeedforwardNormal, FeedforwardTDist
 export SeqToOneNormal, SeqToOneTDist
 export find_mode, find_mode_sgd
 export laplace, SIR_laplace
-export advi
+export advi, bbb
+export sgld
 
 end # module
