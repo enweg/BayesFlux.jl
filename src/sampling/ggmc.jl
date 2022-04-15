@@ -13,15 +13,17 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
               M = diagm(ones(length(initθ))), h = 0.01, γ = 1.5, temp = 1) where {T <: Real}
     
     θ = copy(initθ)
-    θprop = copy(initθ)
     if mod(length(y), batchsize) != 0
         @warn "Batchsize does not properly partition data. Some data will be left out in each cycle."
     end
     num_batches = floor(Int64, length(y)/batchsize)
+    @info "Using $num_batches batches."
+    θprop = zeros(length(θ), num_batches) 
 
     p = Progress(maxiter * num_batches, 1, "GGMC ...")
 
-    samples = zeros(eltype(initθ), length(initθ), maxiter*num_batches) 
+    samples = zeros(eltype(initθ), length(initθ), maxiter*num_batches + 1) 
+    samples[:, 1] = θ
 
     momentum14 = 0.0*similar(θ)
     momentum12 = 0.0*similar(θ)
@@ -29,42 +31,49 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     momentum = 0.0*similar(θ)
     Mhalf = cholesky(M).L
     a = exp(-γ*h)
-    yshuffel, xshuffel = sgd_shuffle(y, x) 
     naccepts = 0
+
+    lMH = -U(θ, llike, lpriorθ, y, x) 
+    lastθi = 1 # column of last added samples
     for t=1:maxiter
+        yshuffel, xshuffel = sgd_shuffle(y, x) 
+        lMH = -U(θ, llike, lpriorθ, y, x) 
         for b=1:num_batches 
             xbatch = sgd_x_batch(xshuffel, b, batchsize)
             ybatch = sgd_y_batch(yshuffel, b, batchsize)
             g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + lpriorθ(θ), θ)[1]
             if any(isnan.(g))
-                error("NaN in gradient. This is likely due to a too large step size. Try different stepsize parameters (a, b, γ) or a different starting value.")
+                error("NaN in gradient. This is likely due to a too large step size. Try using different parameter settings")
             end
 
             momentum14 = sqrt(a)*momentum + sqrt((1-a)*temp)*Mhalf*randn(length(θ))
             momentum12 = momentum14 - h/2 * g
-            θprop = θ + h*inv(M)*momentum12
+            θ = θ + h*inv(M)*momentum12
+            θprop[:,b] = θ
 
-            g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + lpriorθ(θ), θprop)[1]
+            g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + lpriorθ(θ), θ)[1]
             if any(isnan.(g))
-                error("NaN in gradient. This is likely due to a too large step size. Try different stepsize parameters (a, b, γ) or a different starting value.")
+                error("NaN in gradient. This is likely due to a too large step size. Try using different parameter settings")
             end
             momentum34 = momentum12 - h/2 * g 
             momentum = sqrt(a)*momentum34 + sqrt((1-a)*temp)*Mhalf*randn(length(θ))
-            
-            lMH = -1/temp*(U(θprop, llike, lpriorθ, y, x) - U(θ, llike, lpriorθ, y, x) + K(momentum34, M) - K(momentum14, M))
-            if (isinf(lMH))
-                @warn "Ran into a numerical error. Trying to continue."
-            end
-            r = rand()
-            if r < exp(lMH)
-                # accepting
-                θ = θprop
-                naccepts += 1
-            end
 
-            samples[:, (t-1)*num_batches + b] = copy(θ)
+            lMH += K(momentum34, M) - K(momentum14, M)
+
             update!(p, (t-1)*num_batches + b)
         end
+
+        lMH += U(θ, llike, lpriorθ, y, x)
+        lMH /= -temp
+        r = rand()
+        if r < exp(lMH)
+            samples[:, lastθi+1:lastθi+num_batches] .= θprop
+            naccepts += num_batches
+        else 
+            samples[:, lastθi+1:lastθi+num_batches] .= samples[:, lastθi] 
+            θ = samples[:, lastθi]
+        end
+        lastθi += num_batches
     end
 
     @info "Acceptance Rate: $(naccepts/size(samples,2))"
