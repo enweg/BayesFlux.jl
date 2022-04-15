@@ -18,14 +18,13 @@ function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
 
     samples = zeros(eltype(initθ), length(initθ), maxiter*num_batches) 
 
+
     for t=1:maxiter
         yshuffel, xshuffel = sgd_shuffle(y, x) 
-        gprior = Zygote.gradient(lpriorθ, θ)[1]
         for b=1:num_batches 
             xbatch = sgd_x_batch(xshuffel, b, batchsize)
             ybatch = sgd_y_batch(yshuffel, b, batchsize)
-            glike = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch), θ)[1]
-            g = glike .+ gprior
+            g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + lpriorθ(θ), θ)[1]
 
             stepsize = stepsize_a*(stepsize_b+1)^(-stepsize_γ)
             g = stepsize/2 .* g .+ sqrt(stepsize)*randn(length(θ))
