@@ -26,6 +26,16 @@ function loglike(bnn::BNN, STON::SeqToOneNormal{D}, θ::AbstractVector, y::VecOr
     return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf_with_trans(STON.sigprior, sig, true)
 end
 
+function predict(bnn::BNN, STON::SeqToOneNormal{D}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real}
+    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
+    nethats = [bnn.re(np) for np in netparams]
+    sigmas = draws[1,:]
+    sigmas = invlink.([STON.sigprior], sigmas)
+    yhats = [vec([nn(xx) for xx in newx][end]) for nn in nethats]
+    yhats = [yh .+ sig*randn(length(yh)) for (yh, sig) in zip(yhats, sigmas)]
+    return hcat(yhats...)
+end
+
 ################################################################################
 # Sequence to one TDIST
 ################################################################################
@@ -52,4 +62,14 @@ function loglike(bnn::BNN, STOT::SeqToOneTDist{D, R}, θ::AbstractVector, y::Vec
     N = length(y)
 
     return sum(logpdf.(TDist(STOT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(STOT.sigprior, sig, true)
+end
+
+function predict(bnn::BNN, STOT::SeqToOneTDist{D, R}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real, R<:Real}
+    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
+    nethats = [bnn.re(np) for np in netparams]
+    sigmas = draws[1,:]
+    sigmas = invlink.([STON.sigprior], sigmas)
+    yhats = [vec([nn(xx) for xx in newx][end]) for nn in nethats]
+    yhats = [yh .+ sig*rand(TDist(STOT.nu)) for (yh, sig) in zip(yhats, sigmas)]
+    return hcat(yhats...)
 end

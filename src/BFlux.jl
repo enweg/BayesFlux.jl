@@ -1,6 +1,7 @@
 module BFlux
 
 include("./model/BNN.jl")
+include("./model/posterior.jl")
 include("./layers/dense.jl")
 include("./layers/recurrent.jl")
 include("./likelihoods/feedforward.jl")
@@ -18,6 +19,7 @@ export sample_nuts
 
 ###### Exports
 export BNN, BLayer
+export posterior_predict
 export lp, reconstruct_sample
 export FeedforwardNormal, FeedforwardTDist
 export SeqToOneNormal, SeqToOneTDist
