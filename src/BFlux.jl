@@ -10,6 +10,7 @@ include("./sampling/laplace.jl")
 include("./sampling/advi.jl")
 include("./sampling/bbb.jl")
 include("./sampling/sgld.jl")
+include("./sampling/ggmc.jl")
 
 ###### These are for testing
 include("./sampling/nuts_test.jl")
