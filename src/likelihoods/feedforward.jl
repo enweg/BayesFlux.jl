@@ -24,6 +24,16 @@ function loglike(bnn::BNN, FN::FeedforwardNormal{D}, θ::AbstractVector, y::VecO
     return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf_with_trans(FN.sigprior, sig, true)
 end
 
+function predict(bnn::BNN, FN::FeedforwardNormal{D}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real}
+    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
+    nethats = [bnn.re(np) for np in netparams]
+    sigmas = draws[1,:]
+    sigmas = invlink.([FN.sigprior], sigmas)
+    yhats = [vec(nn(newx)) for nn in nethats]
+    yhats = [rand.(Normal.(yh, sig)) for (yh, sig) in zip(yhats, sigmas)]
+    return hcat(yhats...)
+end
+
 ################################################################################
 # T Distribution fixed df 
 ################################################################################
@@ -49,4 +59,17 @@ function loglike(bnn::BNN, FT::FeedforwardTDist{D, R}, θ::AbstractVector, y::Ve
 
     return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(FT.sigprior, sig, true)
 end
+
+function predict(bnn::BNN, FT::FeedforwardTDist{D, R}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real, R<:Real}
+    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
+    nethats = [bnn.re(np) for np in netparams]
+    sigmas = draws[1,:]
+    sigmas = invlink.([FT.sigprior], sigmas)
+    yhats = [vec(nn(newx)) for nn in nethats]
+    yhats = [yh .+ sig*rand(TDist(FT.nu)) for (yh, sig) in zip(yhats, sigmas)]
+    return hcat(yhats...)
+end
+
+
+
     
