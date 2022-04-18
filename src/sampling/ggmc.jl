@@ -10,9 +10,12 @@ K(m, M) = 1/2 * m' * inv(M) * m
 
 function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
               initθ::Vector{T}, maxiter::Int;
-              M = diagm(ones(length(initθ))), l = 0.01, β = 0.5, temp = 1, keep_every = 10) where {T <: Real}
+              M = diagm(ones(length(initθ))), l = 0.01, β = 0.5, temp = 1, keep_every = 10, 
+              adapruns = 5000, κ = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true) where {T <: Real}
     
 
+    # We are exposing a parameterisation in terms of learning rate and momentum parameter
+    # but the updates work using h and γ. See paper for details
     h = sqrt(l / length(y))
     γ = -sqrt(length(y)/l)*log(β)
     
@@ -22,98 +25,80 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     end
     num_batches = floor(Int64, length(y)/batchsize)
     @info "Using $num_batches batches."
-    # θprop = zeros(length(θ), num_batches) 
     θprop = copy(θ)
     tot_iters = maxiter*num_batches
-
 
     p = Progress(maxiter * num_batches, 1, "GGMC ...")
 
     samples = zeros(eltype(initθ), length(initθ), tot_iters + 1) 
     samples[:, 1] = θ
+    lastθi = 1 # column of last added samples
 
     momentum14 = 0.0*similar(θ)
     momentum12 = 0.0*similar(θ)
     momentum34 = 0.0*similar(θ)
     momentum = 0.0*similar(θ)
-    Mhalf = cholesky(M).L
-    a = exp(-γ*h)
+    Mhalf = cholesky(M, check = false).L
+    Minv = inv(M)
     naccepts = 0
 
     lMH = -U(θ, llike, lpriorθ, y, x) 
-    lastθi = 1 # column of last added samples
     hastings = zeros(tot_iters+1)
     momenta = zeros(length(θ), tot_iters+1)
     for t=1:maxiter
         yshuffel, xshuffel = sgd_shuffle(y, x) 
         for b=1:num_batches 
-            # print("θ = $θ, lp = $(U(θ, llike, lpriorθ, y, x)), K = $(K(momentum, M))")
-            # readline()
+            a = exp(-γ*h)
             xbatch = sgd_x_batch(xshuffel, b, batchsize)
             ybatch = sgd_y_batch(yshuffel, b, batchsize)
-            # printstyled("#### 11111111111\n", color = :light_magenta)
-            # println("θ = $θ")
             g = (length(y)/batchsize) * Zygote.gradient(θ -> U(θ, llike, lpriorθ, ybatch, xbatch), θ)[1]
-            # println("g = $g")
-            # println("Ufull = $(U(θ, llike, lpriorθ, y, x))")
-            # println("Ubatch = $(U(θ, llike, lpriorθ, ybatch, xbatch))")
-            # println("ybatch = $ybatch")
-            # println("xbatch = $xbatch")
             if any(isnan.(g))
                 println(θ)
-                # error("NaN in gradient. This is likely due to a too large step size. Try using different parameter settings")
-                @warn "NaN in gradient. Will turn back to old θ"
+                @warn "NaN in gradient. Returning results obtained until now."
                 return samples[:, 1:lastθi], hastings[1:lastθi], momenta[:, 1:((t-1)*num_batches + b)]
-                if mod((t-1)*num_batches + b, keep_every) == 0
-                    samples[:, lastθi+1] = samples[:, lastθi-1]
-                    θ = samples[:, lastθi-1]
-                    lastθi += 1
-                end 
-                continue
             end
 
-            adapruns = 2000
-            if lastθi > 100 && lastθi <= adapruns/2 && mod((t-1)*num_batches+b, keep_every) == 0
+            mass_window_1 = (100 < lastθi <= adapruns/4)
+            mass_window_2 = (adapruns/2 < lastθi <= 3/4*adapruns)
+            h_window_1 = (0<lastθi<=500)
+            h_window_2 = (adapruns/4 < lastθi <= adapruns/2)
+            h_window_3 = (3*adapruns/4 < lastθi <= adapruns)
+            in_h_window = h_window_1 || h_window_2 || h_window_3
+            in_mass_window = mass_window_1 || mass_window_2
+            if adaptM && in_mass_window && mod((t-1)*num_batches+b, keep_every) == 0
                 # doing very simple adaptation 
-                # TODO: check literature for better way
-                α = 0.0
-                Madap = diagm(1 ./ sqrt.(vec(var(samples; dims = 2))))
-                M = α*M + (1-α)*Madap
-                # println(M)
-                # Mhalf = cholesky(M).L
-                Mhalf = sqrt.(M)
-                lastθi == Int(adapruns/2) && println("final M = $(diag(M))")
+                use_samples = mass_window_1 ? samples[:, 100:Int(adapruns/4)] : samples[:, Int(adapruns/2)+1:Int(3*adapruns/4)]
+                # M = (lastθi == Int(adapruns/4) || lastθi == Int(3*adapruns/4)) ? diagm(1 ./ sqrt.(vec(var(use_samples; dims = 2)))) : M
+                # M = diagm(1 ./ sqrt.(vec(var(use_samples; dims = 2))))
+                # Mhalf = sqrt.(M)
+                # Minv = inv(M)
+                if mass_window_1
+                    Minv = cov(use_samples')
+                    Minv = (1-diagonal_shrink)*diagm(diag(Minv)) + diagonal_shrink*Minv
+                    M = inv(Minv)
+                    Mhalf = cholesky(M, check = false).L
+                else
+                    # TODO: find a better shrinking scheme
+                    # probably could shrink less in second window.
+                    Minv = cov(use_samples')
+                    Minv = (1-diagonal_shrink)*diagm(diag(Minv)) + diagonal_shrink*Minv
+                    M = inv(Minv)
+                    Mhalf = cholesky(M, check = false).L
+                end
+
+                (lastθi == Int(adapruns/4) || lastθi == Int(3/4*adapruns)) && @info "M = $(M), temp = $temp"
             end
 
 
             momentum14 .= sqrt(a)*momentum .+ sqrt((1-a)*temp)*Mhalf*randn(length(θ))
             momentum12 .= momentum14 .- h/2 * g
-            # println("m14 = $momentum14")
-            # println("m12 = $momentum12")
-            # println("gradient before update: $g")
-            θ .= θ .+ h*inv(M)*momentum12
+            θ .= θ .+ h*Minv*momentum12
             θprop = θ
 
-            # printstyled("#### 22222222222222222\n", color = :light_magenta)
-            # println("θ = $θ")
             g = (length(y)/batchsize) * Zygote.gradient(θ -> U(θ, llike, lpriorθ, ybatch, xbatch), θ)[1]
-            # println("g = $g")
-            # println("Ufull = $(U(θ, llike, lpriorθ, y, x))")
-            # println("Ubatch = $(U(θ, llike, lpriorθ, ybatch, xbatch))")
-            # println("ybatch = $ybatch")
-            # println("xbatch = $xbatch")
             if any(isnan.(g))
-                println(θ)
-                # println(hastings[1:lastθi])
-                # error("NaN in gradient 2. This is likely due to a too large step size. Try using different parameter settings")
-                @warn "NaN in gradient. Will turn back to old θ"
+                @warn "NaN in gradient. Returning results until obtained until now."
                 return samples[:, 1:lastθi], hastings[1:lastθi], momenta[:, 1:((t-1)*num_batches + b)]
-                if mod((t-1)*num_batches + b, keep_every) == 0
-                    samples[:, lastθi+1] = samples[:, lastθi-1]
-                    θ = samples[:, lastθi-1]
-                    lastθi += 1
-                end 
-                continue
             end
             momentum34 .= momentum12 .- h/2 * g 
             momentum .= sqrt(a)*momentum34 .+ sqrt((1-a)*temp)*Mhalf*randn(length(θ))
@@ -136,15 +121,15 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
                 end
                 lastθi += 1
 
-                if  lastθi <= adapruns
+                if  adapth && in_h_window 
                     # adapting step size/learning rate
                     arate = min(1, hastings[lastθi])
-                    H = 0.65 - arate 
-                    eta = lastθi^(-0.5)
+                    H = goal_accept_rate - arate 
+                    i = h_window_1 ? lastθi : (h_window_2 ? lastθi - floor(Int, adapruns/4) : lastθi - floor(Int, 3*adapruns/4))
+                    eta = i^(-κ)
                     h = exp(log(h) - eta*H)
-                    # println(h)
 
-                    lastθi == adapruns && @info "Final l=$(length(y)*h^2)"
+                    (lastθi == Int(adapruns/2) || lastθi == adapruns) && @info "l=$(length(y)*h^2)"
                 end
 
                 lMH = -U(θ, llike, lpriorθ, y, x) 
@@ -153,22 +138,11 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
 
             update!(p, (t-1)*num_batches + b, showvalues = [(:arate, naccepts/lastθi), 
                                                             (:iter, (t-1)*num_batches + b), 
-                                                            (:samples, lastθi)])
+                                                            (:samples, lastθi), 
+                                                            (:Madapt, adaptM && in_mass_window), 
+                                                            (:hadapt, adapth && in_h_window)])
         end
 
-        # lMH += U(θ, llike, lpriorθ, y, x)
-        # lMH /= -temp
-        # r = rand()
-        # hastings[t] = exp(lMH)
-        # if r < exp(lMH)
-        #     samples[:, lastθi+1:lastθi+num_batches] .= θprop
-        #     naccepts += num_batches
-        # else 
-        #     samples[:, lastθi+1:lastθi+num_batches] .= samples[:, lastθi] 
-        #     θ = samples[:, lastθi]
-        # end
-        # lastθi += num_batches
-        # lMH = -U(θ, llike, lpriorθ, y, x) 
     end
 
     @info "Acceptance Rate: $(naccepts/size(samples,2))"
