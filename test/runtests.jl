@@ -1,6 +1,4 @@
 using BFlux
-using Base.Test
+using Test
 
-@testset "Example test" begin
-    @test 1 + 1 = 2
-end
+include("laplace.jl")

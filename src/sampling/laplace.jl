@@ -29,7 +29,7 @@ function laplace(lpdf, initθ::AbstractVector, maxiter::Int, ϵ::Float64=0.01; d
     θ, conv = find_mode(lpdf, initθ, maxiter, ϵ; verbose = false, kwargs...)
     hessian = diag ? Zygote.diaghessian : Zygote.hessian
     H = hessian(θ -> lpdf(θ), θ)
-    Hinv = diag ? 1 ./ -H[1] : (-H)\I 
+    Hinv = diag ? sqrt.(1 ./ -H[1]) : (-H)\I 
     if !diag && !LinearAlgebra.isposdef(Hinv)
         error("Hessian was not positive definite. Try using a diagonal approximation")
     end
@@ -82,7 +82,7 @@ function mixture_dens(dists::Vector{D}, w::AbstractVector, θ::AbstractVector) w
     return dens
 end
 
-function SIR_laplace(lpdf, la::LaplaceApproximation, n::Int, k::Int)
+function SIR_laplace(lpdf, la::LaplaceApproximation, n::Int, k::Int; verbose = true)
     # Sampling Importance Resampling of Laplace approximation
     sum(la.c) == 0 && error("No laplace approximation converged. Consider running them for longer.")
     !all(la.c) && @warn "Not all laplace approximation converged. Will only used converged ones." 
@@ -94,8 +94,8 @@ function SIR_laplace(lpdf, la::LaplaceApproximation, n::Int, k::Int)
     choose = StatsBase.sample(1:n, StatsBase.ProbabilityWeights(weights), k; replace = false)
     chosen_weights = weights[choose]
     chosen_samples = initial_samples[choose]
-    @info "Mean of importance weights (should be close to one): $(mean(weights))"
-    @info "Mean of importance weights of chosen samples: $(mean(chosen_weights))"
+    verbose && @info "Mean of importance weights (should be close to one): $(mean(weights))"
+    verbose && @info "Mean of importance weights of chosen samples: $(mean(chosen_weights))"
 
     return hcat(chosen_samples...)
 end

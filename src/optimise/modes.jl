@@ -13,7 +13,7 @@ function find_mode(lpdf, initθ::AbstractVector, maxiter::Int, ϵ::Float64=0.000
     for t in iterator
         lj_, g = Zygote.withgradient(θ -> lpdf(θ), θ)
         Flux.update!(opt, θ, -g[1])
-        if  abs((lj_ / lj) - 1) < ϵ
+        if  t > 1 && abs((lj_ / lj) - 1) < ϵ
             if (verbose) @info "Found mode in $t iterations." end
             return θ, true
         end
