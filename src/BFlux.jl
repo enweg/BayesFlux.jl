@@ -12,6 +12,8 @@ include("./sampling/advi.jl")
 include("./sampling/bbb.jl")
 include("./sampling/sgld.jl")
 include("./sampling/ggmc.jl")
+include("./simulations/AR.jl")
+include("./utils/rnn_utils.jl")
 
 ###### These are for testing
 include("./sampling/nuts_test.jl")
