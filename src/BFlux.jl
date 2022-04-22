@@ -28,6 +28,6 @@ export SeqToOneNormal, SeqToOneTDist
 export find_mode, find_mode_sgd
 export laplace, SIR_laplace
 export advi, bbb
-export sgld
+export sgld, ggmc
 
 end # module

@@ -4,8 +4,9 @@ stepsize(a, b, γ, t) = a*(b+t)^(-γ)
 
 function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
                        initθ::AbstractVector, maxiter::Int;
-                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8,
-                       showprogress = true, opt = Flux.ADAM(), verbose = true) where {T<:Real}
+                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8, opt = Flux.ADAM(),
+                       showprogress = true, verbose = true, 
+                       p = Progress(maxiter * floor(Int, length(y)/batchsize); dt = 1, desc = "SGLD ...", enabled = showprogress)) where {T<:Real}
     
     θ = copy(initθ)
 
@@ -13,8 +14,6 @@ function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
         @warn "Batchsize does not properly partition data. Some data will be left out in each cycle."
     end
     num_batches = floor(Int64, length(y)/batchsize)
-
-    p = Progress(maxiter * num_batches, 1, "SGLD ...")
 
     samples = zeros(eltype(initθ), length(initθ), maxiter*num_batches) 
 
@@ -37,7 +36,7 @@ function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
             θ .+= g
 
             samples[:, (t-1)*num_batches + b] = copy(θ)
-            update!(p, (t-1)*num_batches + b)
+            next!(p)
         end
     end
 
@@ -49,4 +48,14 @@ function sgld(bnn::BNN, batchsize::Int, initθ::AbstractVector, maxiter::Int; kw
     llike(θ, y, x) = loglike(bnn, bnn.loglikelihood, θ, y, x)
     lpriorθ(θ) = lprior(bnn, θ)
     return sgld(llike, lpriorθ, batchsize, bnn.y, bnn.x, initθ, maxiter; kwargs...)
+end
+
+function sgld(bnn::BNN, batchsize::Int, initθ::Vector{Vector{T}}, maxiter::Int, nchains::Int; kwargs...) where {T<:Real}
+    chains = Array{Any}(undef, nchains)
+    Threads.nthreads() == 1 && @warn "Only one threads available."
+    p = Progress(maxiter * floor(Int, length(bnn.y)/batchsize) * nchains; dt = 1, desc = "SGLD using $nchains chains ...")
+    Threads.@threads for ch=1:nchains
+        chains[ch] = sgld(bnn, batchsize, initθ[ch], maxiter; p = p, kwargs...)
+    end
+    return chains
 end

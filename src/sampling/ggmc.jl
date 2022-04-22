@@ -11,7 +11,9 @@ K(m, M) = 1/2 * m' * inv(M) * m
 function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
               initθ::Vector{T}, maxiter::Int;
               M = diagm(ones(length(initθ))), l = 0.01, β = 0.5, temp = 1, keep_every = 10, 
-              adapruns = 5000, κ = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true) where {T <: Real}
+              adapruns = 5000, κ = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true, 
+              showprogress = true, debug = false, 
+              p = Progress(maxiter * floor(Int, length(y)/batchsize); dt=1, desc="GGMC ...", enabled = showprogress)) where {T <: Real}
     
 
     # We are exposing a parameterisation in terms of learning rate and momentum parameter
@@ -27,8 +29,6 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     @info "Using $num_batches batches."
     θprop = copy(θ)
     tot_iters = maxiter*num_batches
-
-    p = Progress(maxiter * num_batches, 1, "GGMC ...")
 
     samples = zeros(eltype(initθ), length(initθ), tot_iters + 1) 
     samples[:, 1] = θ
@@ -136,11 +136,15 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
 
             end
 
-            update!(p, (t-1)*num_batches + b, showvalues = [(:arate, naccepts/lastθi), 
+            if debug
+                update!(p, (t-1)*num_batches + b, showvalues = [(:arate, naccepts/lastθi), 
                                                             (:iter, (t-1)*num_batches + b), 
                                                             (:samples, lastθi), 
                                                             (:Madapt, adaptM && in_mass_window), 
                                                             (:hadapt, adapth && in_h_window)])
+            else 
+                next!(p)
+            end
         end
 
     end
@@ -154,4 +158,14 @@ function ggmc(bnn::BNN, batchsize::Int, initθ::AbstractVector, maxiter::Int; kw
     llike(θ, y, x) = loglike(bnn, bnn.loglikelihood, θ, y, x)
     lpriorθ(θ) = lprior(bnn, θ)
     return ggmc(llike, lpriorθ, batchsize, bnn.y, bnn.x, initθ, maxiter; kwargs...)
+end
+
+function ggmc(bnn::BNN, batchsize::Int, initθ::Vector{Vector{T}}, maxiter::Int, nchains::Int; kwargs...) where {T<:Real}
+    chains = Array{Any}(undef, nchains)
+    Threads.nthreads() == 1 && @warn "Only one thread available."
+    p = Progress(maxiter * floor(Int, length(bnn.y)/batchsize) * nchains; dt=1, desc="GGMC with $nchains chains ...") 
+    Threads.@threads for ch=1:nchains
+        chains[ch] = ggmc(bnn, batchsize, initθ[ch], maxiter; p = p, kwargs...)
+    end
+    return chains
 end

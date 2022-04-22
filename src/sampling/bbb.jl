@@ -8,7 +8,10 @@ function getθ(ψ, ϵ, get_μ_Σ)
     return μ .+ Σ * ϵ
 end
 
-function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxiter::Int, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}; opt = Flux.RMSProp(), windowlength = 100) where {T<:Real}
+function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxiter::Int, 
+             batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}; 
+             opt = Flux.RMSProp(), windowlength = 100, showprogress = true, 
+             p = Progress(maxiter*floor(Int, length(y)/batchsize); dt = 1, desc = "Bayes by Backprop ...", enabled = showprogress)) where {T<:Real}
 
     nbatches = floor(Int, length(y)/batchsize)
     if mod(length(y), batchsize) != 0
@@ -24,8 +27,6 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
     ψ = copy(initψ)
     bbb_kl(ψ, ϵ, ybatch, xbatch) = logpdf(MvNormal(get_μ_Σ(ψ)[1], Symmetric(get_μ_Σ(ψ)[2]*get_μ_Σ(ψ)[2]')), getθ(ψ, ϵ, get_μ_Σ)) - length(y)/nbatches * llike(getθ(ψ, ϵ, get_μ_Σ), ybatch, xbatch) - lpriorθ(getθ(ψ, ϵ, get_μ_Σ))
 
-
-    p = Progress(maxiter*nbatches, 1, "Bayes by Backprop ...")
     nparams = length(get_μ_Σ(ψ)[1])
 
     ravalues = zeros(windowlength)
@@ -46,7 +47,8 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
             # ϵ = rand(MvNormal(zeros(nparams), ones(nparams)), nsamples)
             # g = Zygote.gradient(ψ -> mean(bbb_kl.([ψ], eachcol(ϵ), [ybatch], [xbatch])), ψ)[1]
             Flux.update!(opt, ψ, g)
-            update!(p, (i-1)*nbatches + b)
+            # update!(p, (i-1)*nbatches + b)
+            next!(p)
         end
 
         ϵ = randn(nparams)
@@ -70,3 +72,14 @@ function bbb(bnn::BNN, nsamples::Int, maxiter::Int, batchsize::Int; kwargs...)
     return bbb(llike, lpriorθ, initψ, get_mu_sig, nsamples, maxiter, batchsize, bnn.y, bnn.x; kwargs...)
 end
 
+function bbb(bnn::BNN, nsamples::Int, maxiter::Int, batchsize::Int, nchains::Int; kwargs...)
+    chains = Array{Any}(undef, nchains)
+    if Threads.nthreads() == 1
+        @warn "Only one thread available."
+    end
+    p = Progress(maxiter*floor(Int, length(bnn.y)/batchsize)*nchains; dt = 1, desc = "Bayes by Backprop using $nchains chains ...")
+    Threads.@threads for ch=1:nchains
+        chains[ch] = bbb(bnn, nsamples, maxiter, batchsize; p = p, kwargs...)
+    end
+    return chains
+end
