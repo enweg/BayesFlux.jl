@@ -4,7 +4,7 @@ stepsize(a, b, γ, t) = a*(b+t)^(-γ)
 
 function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
                        initθ::AbstractVector, maxiter::Int;
-                       stepsize_a=1.0, stepsize_b=100.0, stepsize_γ=0.3,
+                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8,
                        showprogress = true, opt = Flux.ADAM(), verbose = true) where {T<:Real}
     
     θ = copy(initθ)
@@ -24,10 +24,11 @@ function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
         for b=1:num_batches 
             xbatch = sgd_x_batch(xshuffel, b, batchsize)
             ybatch = sgd_y_batch(yshuffel, b, batchsize)
-            g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + lpriorθ(θ), θ)[1]
+            g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + batchsize/length(y) * lpriorθ(θ), θ)[1]
 
-            stepsize = stepsize_a*(stepsize_b+1)^(-stepsize_γ)
-            g = stepsize/2 .* g .+ sqrt(stepsize)*randn(length(θ))
+            tt = (t-1)*num_batches + b
+            α = stepsize(stepsize_a, stepsize_b, stepsize_γ, tt)
+            g = α/2 .* g .+ sqrt(α)*randn(length(θ))
             
             if any(isnan.(g))
                 error("NaN in gradient. This is likely due to a too large step size. Try different stepsize parameters (a, b, γ) or a different starting value.")
