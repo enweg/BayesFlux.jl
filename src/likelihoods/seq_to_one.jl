@@ -68,7 +68,7 @@ function predict(bnn::BNN, STOT::SeqToOneTDist{D, R}, draws::Matrix{T}; newx = b
     netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
     nethats = [bnn.re(np) for np in netparams]
     sigmas = draws[1,:]
-    sigmas = invlink.([STON.sigprior], sigmas)
+    sigmas = invlink.([STOT.sigprior], sigmas)
     yhats = [vec([nn(xx) for xx in newx][end]) for nn in nethats]
     yhats = [yh .+ sig*rand(TDist(STOT.nu)) for (yh, sig) in zip(yhats, sigmas)]
     return hcat(yhats...)
