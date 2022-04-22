@@ -1,6 +1,5 @@
 # Find modes by optimising the network from multiple random starting points
 # Forms a laplace approximation of all modes. 
-include("../optimise/modes.jl")
 using ProgressMeter
 using Distributions
 import Distributions: _rand!
