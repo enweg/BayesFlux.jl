@@ -70,7 +70,7 @@ function laplace(bnn::BNN, maxiter::Int, ϵ::Float64=0.01; init_θ = randn(bnn.t
 end
 
 function laplace(bnn::BNN, maxiter::Int, M::Int, args...; kwargs...)
-    return laplace(θ -> lp(bnn, θ), MvNormal(zeros(bnn.totparams), 10*ones(bnn.totparams)), maxiter, M, args...; kwargs...)
+    return laplace(θ -> lp(bnn, θ), MvNormal(zeros(bnn.totparams), ones(bnn.totparams)), maxiter, M, args...; kwargs...)
 end
 
 function mixture_dens(dists::Vector{D}, w::AbstractVector, θ::AbstractVector) where {D<:Distributions.MultivariateDistribution}
