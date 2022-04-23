@@ -114,7 +114,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
                 hastings[lastθi+1] = exp(lMH)
                 if r < exp(lMH)
                     samples[:, lastθi+1] .= θprop
-                    naccepts += 1 
+                    (lastθi > adapruns) && naccepts += 1 
                 else 
                     samples[:, lastθi+1] .= samples[:, lastθi] 
                     θ = samples[:, lastθi]
@@ -149,7 +149,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
 
     end
 
-    @info "Acceptance Rate: $(naccepts/size(samples,2))"
+    @info "Acceptance Rate: $(naccepts/(size(samples,2) - adapruns))"
     return samples[:, 1:lastθi], hastings[1:lastθi], momenta
 
 end
