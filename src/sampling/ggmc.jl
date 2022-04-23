@@ -167,5 +167,10 @@ function ggmc(bnn::BNN, batchsize::Int, initθ::Vector{Vector{T}}, maxiter::Int,
     Threads.@threads for ch=1:nchains
         chains[ch] = ggmc(bnn, batchsize, initθ[ch], maxiter; p = p, kwargs...)
     end
-    return chains
+
+    samples = cat([ch[1] for ch in chains]...; dims = 3)
+    hastings = cat([ch[2] for ch in chains]...; dims = 3)
+    momenta = cat([ch[3] for ch in chains]...; dims = 3)
+
+    return samples, hastings, momenta
 end
