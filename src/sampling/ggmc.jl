@@ -114,7 +114,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
                 hastings[lastθi+1] = exp(lMH)
                 if r < exp(lMH)
                     samples[:, lastθi+1] .= θprop
-                    (lastθi > adapruns) && naccepts += 1 
+                    if (lastθi >= adapruns) naccepts += 1 end
                 else 
                     samples[:, lastθi+1] .= samples[:, lastθi] 
                     θ = samples[:, lastθi]
