@@ -10,11 +10,14 @@ K(m, M) = 1/2 * m' * inv(M) * m
 
 function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
               initθ::Vector{T}, maxiter::Int;
-              M = diagm(ones(length(initθ))), l = 0.01, β = 0.5, temp = 1, keep_every = 10, 
-              adapruns = 5000, κ = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true, 
+              M = diagm(ones(length(initθ))), l = 0.01, β = 0.5, beta = 0.5, temp = 1, keep_every = 10, 
+              adapruns = 5000, κ = 0.5, kappa = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true, 
               showprogress = true, debug = false, 
               p = Progress(maxiter * floor(Int, length(y)/batchsize); dt=1, desc="GGMC ...", enabled = showprogress)) where {T <: Real}
     
+    # Allowing for unicode/no-unicode
+    β = beta
+    κ = kappa
 
     # We are exposing a parameterisation in terms of learning rate and momentum parameter
     # but the updates work using h and γ. See paper for details
@@ -155,19 +158,6 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     # @info "Acceptance Rate: $(naccepts/(size(samples,2) - adapruns))"
     return samples[:, 1:lastθi], hastings[1:lastθi], momenta, accept[1:lastθi]
 
-end
-
-function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
-              initθ::Vector{T}, maxiter::Int;
-              M = diagm(ones(length(initθ))), l = 0.01, beta = 0.5, temp = 1, keep_every = 10, 
-              adapruns = 5000, kappa = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true, 
-              showprogress = true, debug = false, 
-              p = Progress(maxiter * floor(Int, length(y)/batchsize); dt=1, desc="GGMC ...", enabled = showprogress)) where {T <: Real}
-    return ggmc(llike, lpriorθ, batchsize, y, x, initθ, maxiter;
-                M = M, l = l, β = beta, temp = temp, keep_every = keep_every, 
-                adapruns = adapruns, κ = kappa, goal_accept_rate = goal_accept_rate, adaptM = adaptM, adapth = adapth, 
-                diagonal_shrink = diagonal_shrink, showprogress = showprogress, debug = debug, 
-                p = p)
 end
 
 function ggmc(bnn::BNN, batchsize::Int, initθ::AbstractVector, maxiter::Int; kwargs...)
