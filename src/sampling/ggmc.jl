@@ -157,6 +157,19 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
 
 end
 
+function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
+              initθ::Vector{T}, maxiter::Int;
+              M = diagm(ones(length(initθ))), l = 0.01, beta = 0.5, temp = 1, keep_every = 10, 
+              adapruns = 5000, kappa = 0.5, goal_accept_rate = 0.65, adaptM = false, diagonal_shrink = 0.9, adapth = true, 
+              showprogress = true, debug = false, 
+              p = Progress(maxiter * floor(Int, length(y)/batchsize); dt=1, desc="GGMC ...", enabled = showprogress)) where {T <: Real}
+    return ggmc(llike, lpriorθ, batchsize, y, x, initθ, maxiter;
+                M = M, l = l, β = beta, temp = temp, keep_every = keep_every, 
+                adapruns = adapruns, κ = kappa, goal_accept_rate = goal_accept_rate, adaptM = adaptM, adapth = adapth, 
+                diagonal_shrink = diagonal_shrink, showprogress = showprogress, debug = debug, 
+                p = p)
+end
+
 function ggmc(bnn::BNN, batchsize::Int, initθ::AbstractVector, maxiter::Int; kwargs...)
     llike(θ, y, x) = loglike(bnn, bnn.loglikelihood, θ, y, x)
     lpriorθ(θ) = lprior(bnn, θ)
