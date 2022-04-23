@@ -25,7 +25,7 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
     """
 
     ψ = copy(initψ)
-    bbb_kl(ψ, ϵ, ybatch, xbatch) = logpdf(MvNormal(get_μ_Σ(ψ)[1], Symmetric(get_μ_Σ(ψ)[2]*get_μ_Σ(ψ)[2]')), getθ(ψ, ϵ, get_μ_Σ)) - length(y)/nbatches * llike(getθ(ψ, ϵ, get_μ_Σ), ybatch, xbatch) - lpriorθ(getθ(ψ, ϵ, get_μ_Σ))
+    bbb_kl(ψ, ϵ, ybatch, xbatch) = logpdf(MvNormal(get_μ_Σ(ψ)[1], Symmetric(get_μ_Σ(ψ)[2]*get_μ_Σ(ψ)[2]')), getθ(ψ, ϵ, get_μ_Σ)) - nbatches * llike(getθ(ψ, ϵ, get_μ_Σ), ybatch, xbatch) - lpriorθ(getθ(ψ, ϵ, get_μ_Σ))
 
     nparams = length(get_μ_Σ(ψ)[1])
 
@@ -39,7 +39,7 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
             xbatch = sgd_x_batch(xshuffle, b, batchsize)
 
             g = zeros(eltype(ψ), size(ψ)[1], nsamples)
-            Threads.@threads for s=1:nsamples
+            for s=1:nsamples
                 ϵ = randn(nparams)
                 g[:, s] = Zygote.gradient(ψ -> bbb_kl(ψ, ϵ, ybatch, xbatch), ψ)[1]
             end
@@ -61,13 +61,13 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
 
     end
 
-    return MvNormal(get_μ_Σ(ψ)[1], Symmetric(get_μ_Σ(ψ)[2]*get_μ_Σ(ψ)[2]')), ψ, losses
+    return MvNormal(get_μ_Σ(ψ)[1], Symmetric(get_μ_Σ(ψ)[2]*get_μ_Σ(ψ)[2]')), initψ, ψ, losses
 end
 
 function bbb(bnn::BNN, nsamples::Int, maxiter::Int, batchsize::Int; kwargs...)
     llike(θ, y, x) = loglike(bnn, bnn.loglikelihood, θ, y, x)
     lpriorθ(θ) = lprior(bnn, θ)
-    initψ = randn(bnn.totparams*2)
+    initψ = 0.1*randn(bnn.totparams*2)
     get_mu_sig(ψ) = (ψ[1:bnn.totparams], diagm(exp.(ψ[bnn.totparams+1:end])))
     return bbb(llike, lpriorθ, initψ, get_mu_sig, nsamples, maxiter, batchsize, bnn.y, bnn.x; kwargs...)
 end
@@ -81,5 +81,11 @@ function bbb(bnn::BNN, nsamples::Int, maxiter::Int, batchsize::Int, nchains::Int
     Threads.@threads for ch=1:nchains
         chains[ch] = bbb(bnn, nsamples, maxiter, batchsize; p = p, kwargs...)
     end
-    return chains
+
+    dist = MixtureModel([ch[1] for ch in chains])
+    initψs = hcat([ch[2] for ch in chains]...)
+    ψs = hcat([ch[3] for ch in chains]...)
+    losses = hcat([ch[4] for ch in chains]...)
+
+    return dist, initψs, ψs, losses
 end
