@@ -31,7 +31,9 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     tot_iters = maxiter*num_batches
 
     samples = zeros(eltype(initθ), length(initθ), tot_iters + 1) 
+    accept = zeros(tot_iters + 1)
     samples[:, 1] = θ
+    accept[1] = 1
     lastθi = 1 # column of last added samples
 
     momentum14 = 0.0*similar(θ)
@@ -114,6 +116,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
                 hastings[lastθi+1] = exp(lMH)
                 if r < exp(lMH)
                     samples[:, lastθi+1] .= θprop
+                    accept[lastθi+1] = 1
                     if (lastθi >= adapruns) naccepts += 1 end
                 else 
                     samples[:, lastθi+1] .= samples[:, lastθi] 
@@ -149,8 +152,8 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
 
     end
 
-    @info "Acceptance Rate: $(naccepts/(size(samples,2) - adapruns))"
-    return samples[:, 1:lastθi], hastings[1:lastθi], momenta
+    # @info "Acceptance Rate: $(naccepts/(size(samples,2) - adapruns))"
+    return samples[:, 1:lastθi], hastings[1:lastθi], momenta, accept[1:lastθi]
 
 end
 
@@ -171,6 +174,7 @@ function ggmc(bnn::BNN, batchsize::Int, initθ::Vector{Vector{T}}, maxiter::Int,
     samples = cat([ch[1] for ch in chains]...; dims = 3)
     hastings = cat([ch[2] for ch in chains]...; dims = 3)
     momenta = cat([ch[3] for ch in chains]...; dims = 3)
+    accept = cat([ch[4] for ch in chains]...; dims = 3)
 
-    return samples, hastings, momenta
+    return samples, hastings, momenta, accept
 end
