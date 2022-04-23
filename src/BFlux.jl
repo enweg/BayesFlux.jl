@@ -15,10 +15,6 @@ include("./sampling/ggmc.jl")
 include("./simulations/AR.jl")
 include("./utils/rnn_utils.jl")
 
-###### These are for testing
-include("./sampling/nuts_test.jl")
-export sample_nuts
-
 ###### Exports
 export BNN, BLayer
 export posterior_predict
