@@ -4,10 +4,12 @@ stepsize(a, b, γ, t) = a*(b+t)^(-γ)
 
 function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
                        initθ::AbstractVector, maxiter::Int;
-                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8, opt = Flux.ADAM(),
+                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8, stepsize_gamma=0.8,
                        showprogress = true, verbose = true, 
                        p = Progress(maxiter * floor(Int, length(y)/batchsize); dt = 1, desc = "SGLD ...", enabled = showprogress)) where {T<:Real}
     
+    # Handling no-unicode environments
+    stepsize_γ = stepsize_gamma
     θ = copy(initθ)
 
     if mod(length(y), batchsize) != 0
