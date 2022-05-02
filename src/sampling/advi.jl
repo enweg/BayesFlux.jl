@@ -3,11 +3,47 @@ using ProgressMeter
 
 # ADVI for BFlux
 
+"""
+    advi(bnn::BNN, samples_per_step::Int, maxiters::Int, args...; kwargs...)
+
+Estimate a BNN using Automatic Differentiation Variational Inference (ADVI). 
+
+# Uses
+- Uses ADVI as implemented in AdvancedVI.jl
+
+# Arguments 
+- `bnn`: A Bayesian Neural Network
+- `samples_per_step`: Samples per step to be used to approximate expectation. 
+- `maxiters`: Number of iteratios for which ADVI should run. ADVI does not currently 
+include convergence criteria. As such, the algorithm will run for the full `maxiters` iterations
+- `args...`: Other argumetns to be passed on to advi 
+- `kwargs...`: Other arguments to be passed on to advi
+
+"""
 function advi(bnn::BNN, samples_per_step::Int, maxiters::Int, args...; kwargs...)
     getq(θ) = MvNormal(θ[1:bnn.totparams], exp.(θ[bnn.totparams+1:end]))
     return advi(bnn, getq, samples_per_step, maxiters, args...; kwargs...)
 end
 
+"""
+    advi(bnn::BNN, getq::Function, samples_per_step::Int, maxiters::Int; showprogress = true)
+
+Estimate a BNN using Automatic Differentiation Variational Inference (ADVI). 
+
+# Uses
+- Uses ADVI as implemented in AdvancedVI.jl
+
+# Arguments 
+- `bnn`: A Bayesian Neural Network
+- `getq`: A function that takes a vector and returns the variational distribution. 
+- `samples_per_step`: Samples per step to be used to approximate expectation. 
+- `maxiters`: Number of iteratios for which ADVI should run. ADVI does not currently 
+include convergence criteria. As such, the algorithm will run for the full `maxiters` iterations
+
+# Keyword Arguments
+- `showprogress = true`: Should progress be shown? 
+
+"""
 function advi(bnn::BNN, getq::Function, samples_per_step::Int, maxiters::Int; showprogress = true)
     AdvancedVI.turnprogress(showprogress)
     lπ(θ) = lp(bnn, θ)
@@ -18,25 +54,4 @@ function advi(bnn::BNN, getq::Function, samples_per_step::Int, maxiters::Int; sh
 
     q = AdvancedVI.vi(lπ, advi, getq, initθ)
     return q
-end
-
-# FIXME: This somehow breaks; ADVI does not seem to work in threads. 
-function advi(bnn::BNN, getq::Function, samples_per_step::Int, maxiters::Int, num_qs::Int)
-    qs = Array{Distribution}(undef, num_qs)
-    AdvancedVI.turnprogress(false) # show no individual progress
-
-    p = Progress(num_qs)
-    update!(p, 0)
-    # jj = Threads.Atomic{Int}(0)
-    # l = Threads.SpinLock()
-
-    Threads.@threads for i=1:num_qs
-    # for i=1:num_qs
-        qs[i] = advi(bnn, getq, samples_per_step, maxiters; showprogress = false)
-        # Threads.atomic_add!(jj, 1)
-        # Threads.lock(l)
-        # update!(p, jj[])
-        # Threads.unlock(l)
-    end
-    return qs
 end
