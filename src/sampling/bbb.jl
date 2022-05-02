@@ -23,6 +23,11 @@ function getθ(ψ, ϵ, get_μ_Σ)
     return μ .+ Σ * ϵ
 end
 
+function bbb_objective(llike, lpriorθ, ψ, ϵ, ybatch, xbatch, get_μ_Σ, nbatches)
+    μ, Σ = get_μ_Σ(ψ)
+    θ = μ .+ Σ * ϵ
+    return logpdf(MvNormal(μ, Symmetric(Σ*Σ')), θ) - nbatches * llike(θ, ybatch, xbatch) - lpriorθ(θ)
+end
 
 function bbb_step!(ψ, ybatch, xbatch, nsamples, nparams, bbb_objective, opt)
     g = zeros(eltype(ψ), size(ψ, 1), nsamples)
@@ -52,7 +57,7 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
     Losses will be calculated using a window length of $windowlength. 
     """
 
-    bbb_objective(ψ, ϵ, ybatch, xbatch) = logpdf(MvNormal(get_μ_Σ(ψ)[1], Symmetric(get_μ_Σ(ψ)[2]*get_μ_Σ(ψ)[2]')), getθ(ψ, ϵ, get_μ_Σ)) - nbatches * llike(getθ(ψ, ϵ, get_μ_Σ), ybatch, xbatch) - lpriorθ(getθ(ψ, ϵ, get_μ_Σ))
+    bbb_obj(ψ, ϵ, ybatch, xbatch) = bbb_objective(llike, lpriorθ, ψ, ϵ, ybatch, xbatch, get_μ_Σ, nbatches)
 
     ravalues = zeros(windowlength)
     losses = zeros(maxiter-windowlength)
@@ -62,13 +67,13 @@ function bbb(llike, lpriorθ, initψ::Vector{T}, get_μ_Σ, nsamples::Int, maxit
         for b=1:nbatches
             ybatch = sgd_y_batch(yshuffle, b, batchsize)
             xbatch = sgd_x_batch(xshuffle, b, batchsize)
-            bbb_step!(ψ, ybatch, xbatch, nsamples, nparams, bbb_objective, opt)
+            bbb_step!(ψ, ybatch, xbatch, nsamples, nparams, bbb_obj, opt)
             next!(p)
         end
 
         # Calculating the moving average of the loss
         ϵ = randn(nparams)
-        loss = bbb_objective(ψ, ϵ, y, x)
+        loss = bbb_obj(ψ, ϵ, y, x)
         raindex = mod(i, windowlength) + 1
         ravalues[raindex] = loss
         if i > windowlength
