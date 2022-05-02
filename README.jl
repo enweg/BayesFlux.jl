@@ -198,20 +198,22 @@ lower = [quantile(yh, 0.025) for yh in eachrow(ppred)]
 outside = [yy < l || yy > u for (l, yy, u) in zip(lower, y_test, upper)]
 sum(outside)/length(y_test)
 
+# ### MCMC
 
 # BFlux currently also implementes two MCMC samples: 
 # (1) Stochastic Gradient Langevin Dynamics introduced by ... but shown by ...
 # to have a zero MH acceptance probability, and
 # (2) Gradient Guided Monte Carlo as proposed by ... as an alternative to SGLD. 
 # Note: Both MCMC methods need a lot of tuning. Current experience tells me that 
-# small sample sizes and no metric tuning work best. The small sample sizes are 
-# likly needed due to the complex topology of the posterior distribution. Also note, 
+# small step sizes and no metric tuning work best. The small step sizes are 
+# likely needed due to the complex topology of the posterior distribution. Also note, 
 # that the chains generally mix very badly and have a very high autocorrelation in 
 # most experiments. Future work will look into how this could be improved. Noteworthy 
 # is though, that although mixing is often bad in parameter space, posterior predictive 
 # values often mix rather well. 
 
-# We see that SGLD performs well, but also that a very low stepsize was needed. 
+# We see that SGLD and GGMC perform well, with GGMC being better than SGLD,
+# but also that a very low stepsize was needed. 
 
 samples = sgld(bnn, 50, mode[1], 500_000, stepsize_γ = 0.55, stepsize_b = 0, stepsize_a = 1e-10)
 ppred = posterior_predict(bnn, samples[:, 500_000:end], newx = X_test)
@@ -226,7 +228,7 @@ outside = [yy < l || yy > u for (l, yy, u) in zip(lower, y_test, upper)]
 sum(outside)/length(y_test)
 
 
-# GGMC
+# **GGMC**
 
 samples = BFlux.ggmc(bnn, 50, randn(bnn.totparams), 100_000, adaptM = false, adapth = true, l = 1e-10, β = 0.3, goal_accept_rate = 0.2, keep_every = 1)
 ppred = posterior_predict(bnn, samples[1][:, 100_000:end], newx = X_test)
@@ -242,7 +244,7 @@ sum(outside)/length(y_test)
 
 # ## Recurrent Neural Networks
 # 
-# BFlus also allows for Recurrent Layers. We will demonstrate this by using 
+# BFlux also allows for Recurrent Layers. We will demonstrate this by using 
 # a simple AR(1) model 
 
 ar1 = BFlux.AR([0.5])
@@ -299,6 +301,14 @@ upper = [quantile(yh, 0.975) for yh in eachrow(ppred)]
 lower = [quantile(yh, 0.025) for yh in eachrow(ppred)]
 outside = [yy < l || yy > u for (l, yy, u) in zip(lower, y, upper)]
 sum(outside)/length(y)
+
+# We could also estimate the model using GGMC. This will naturally take longer, 
+# but will give us an average acceptance rate, which could be taken as a measure
+# of how well of an approximation we obtain. Better measures would be to look at 
+# whether chains are actually mixing and what the effective sample size is. Both 
+# are still open projects. 
+
+# TODO
 
 # ## Implemented Priors
 
