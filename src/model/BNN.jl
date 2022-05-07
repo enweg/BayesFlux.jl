@@ -92,14 +92,10 @@ function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, 
     return lprior(bnn, θ) + loglike(bnn, bnn.loglikelihood, θ, y, x)
 end
 
-# function reconstruct_sample(bnn::B, θ::AbstractVector) where {B<:BNN}
-#     s = 1
-#     θ_rec = similar(θ)
-#     for bl in bnn.blayers
-#         nparams = bl.nparams 
-#         e = s + nparams - 1
-#         θ_rec[s:e] .= bl.resamples(view(θ, s:e))
-#         s += nparams
-#     end
-#     return θ_rec
-# end
+function clip_gradient_value!(g, maxval=15)
+    maxabs_g_val = maximum(abs.(g))
+    if maxabs_g_val > maxval
+        g .= maxval/maxabs_g_val .* g
+    end
+    return g
+end

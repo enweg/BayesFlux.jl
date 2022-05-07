@@ -1,10 +1,34 @@
 # implementation of stochastic gradient langevin dynamics
 
+"""
+    stepsize(a, b, γ, t)
+
+Calculate the stepsize. 
+
+Calculates the next stepsize according to ϵₜ = a(b+t)^(-γ). This is a commonly used 
+stepsize schedule that meets the criteria ∑ϵₜ = ∞, ∑ϵₜ² < ∞. 
+
+"""
 stepsize(a, b, γ, t) = a*(b+t)^(-γ)
+
+"""
+    ∇lp(θ, llike, lpriorθ, y, x, nbatches)
+
+Obtain the gradient of the unnormalised log posterior. 
+
+# Arguments
+- `θ`: The parameters
+- `llike`: The loglikelihood function of the form `llike(θ, y, x)`
+- `lpriorθ` The logprior function of the form `lpriorθ(θ)`
+- `y`, `x`, the y and x values. Can be a mini-batch
+- `numbatches` Total number of batches. Should be 1 if no mini-batching is used
+"""
+∇lp(θ, llike, lpriorθ, y, x, nbatches) = nbatches * Zygote.gradient(θ -> llike(θ, y, x) + 1/nbatches * lpriorθ(θ), θ)[1]
+
 
 function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
                        initθ::AbstractVector, maxiter::Int;
-                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8, stepsize_gamma=0.8,
+                       stepsize_a=0.1, stepsize_b=100.0, stepsize_γ=0.8, stepsize_gamma=0.8, stepsize_min = 1e-4,
                        showprogress = true, verbose = true, 
                        p = Progress(maxiter * floor(Int, length(y)/batchsize); dt = 1, desc = "SGLD ...", enabled = showprogress)) where {T<:Real}
     
@@ -25,10 +49,12 @@ function sgld(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
         for b=1:num_batches 
             xbatch = sgd_x_batch(xshuffel, b, batchsize)
             ybatch = sgd_y_batch(yshuffel, b, batchsize)
-            g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + batchsize/length(y) * lpriorθ(θ), θ)[1]
-
             tt = (t-1)*num_batches + b
             α = stepsize(stepsize_a, stepsize_b, stepsize_γ, tt)
+            α = max(α, stepsize_min)
+            # g = (length(y)/batchsize) * Zygote.gradient(θ -> llike(θ, ybatch, xbatch) + batchsize/length(y) * lpriorθ(θ), θ)[1]
+            g = ∇lp(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
+            g = clip_gradient_value!(g)
             g = α/2 .* g .+ sqrt(α)*randn(length(θ))
             
             if any(isnan.(g))

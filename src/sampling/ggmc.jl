@@ -76,13 +76,6 @@ end
 # Gradient can sometimes be exploding, for that reason we often need to clip 
 # gradients so that we are not running into numerical problems. 
 ∇U(θ, llike, lpriorθ, y, x, nbatches) = Zygote.gradient(θ -> nbatches * -llike(θ, y, x) - lpriorθ(θ), θ)[1]
-function clip_gradient_value!(g, maxval=15)
-    maxabs_g_val = maximum(abs.(g))
-    if maxabs_g_val > maxval
-        g .= maxval/maxabs_g_val .* g
-    end
-    return g
-end
 
 
 function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
