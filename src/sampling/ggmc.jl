@@ -76,7 +76,7 @@ end
 # Gradient can sometimes be exploding, for that reason we often need to clip 
 # gradients so that we are not running into numerical problems. 
 ∇U(θ, llike, lpriorθ, y, x, nbatches) = Zygote.gradient(θ -> nbatches * -llike(θ, y, x) - lpriorθ(θ), θ)[1]
-function clip_gradient_value!(g, maxval)
+function clip_gradient_value!(g, maxval=15)
     maxabs_g_val = maximum(abs.(g))
     if maxabs_g_val > maxval
         g .= maxval/maxabs_g_val .* g
@@ -117,10 +117,10 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     accept[1] = 1
     lastθi = 1 # column of last added samples
 
-    momentum14 = 0.0*similar(θ)
-    momentum12 = 0.0*similar(θ)
-    momentum34 = 0.0*similar(θ)
-    momentum = 0.0*similar(θ)
+    momentum14 = zeros(size(θ))
+    momentum12 = zeros(size(θ))
+    momentum34 = zeros(size(θ))
+    momentum = zeros(size(θ))
     Mhalf = cholesky(M, check = false).L
     Minv = inv(M)
     naccepts = 0
@@ -136,7 +136,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
             ybatch = sgd_y_batch(yshuffel, b, batchsize)
 
             g = ∇U(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
-            g = clip_gradient_value!(g, 15)
+            g = clip_gradient_value!(g)
             if any(isnan.(g))
                 @warn "NaN in gradient. Returning results obtained until now."
                 return samples[:, 1:lastθi], hastings[1:lastθi], momenta[:, 1:((t-1)*num_batches + b)]
@@ -152,7 +152,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
             θprop = θ
 
             g = ∇U(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
-            g = clip_gradient_value!(g, 15)
+            g = clip_gradient_value!(g)
             if any(isnan.(g))
                 @warn "NaN in gradient. Returning results until obtained until now."
                 return samples[:, 1:lastθi], hastings[1:lastθi], momenta[:, 1:((t-1)*num_batches + b)]
@@ -183,7 +183,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
                 if  adapth && lastθi <= adapruns
                     # adapting step size/learning rate
                     h = h_adapter(lastθi, hastings[lastθi])
-                    (lastθi == Int(adapruns/2) || lastθi == adapruns) && @info "l=$(length(y)*h^2)"
+                    lastθi == adapruns && @info "l=$(length(y)*h^2)"
                 end
 
                 lMH = -U(θ, llike, lpriorθ, y, x) 
