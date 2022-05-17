@@ -1,7 +1,10 @@
+################################################################################
+# ADVI for BFlux
+# Relies on the ADVI implementation in AdvancedVI.jl. Since functionality 
+# is tested there, it will not be tested here.
+################################################################################
 using AdvancedVI, DistributionsAD
 using ProgressMeter
-
-# ADVI for BFlux
 
 """
     advi(bnn::BNN, samples_per_step::Int, maxiters::Int, args...; kwargs...)
