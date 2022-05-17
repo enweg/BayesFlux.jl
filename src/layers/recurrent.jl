@@ -1,3 +1,6 @@
+################################################################################
+# Layer implementations are documented in implementation-layer.md 
+################################################################################
 using Flux, Random, Distributions
 using Optimisers
 using Bijectors

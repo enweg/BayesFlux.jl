@@ -19,15 +19,8 @@ net = Chain(RNN(1, 1))
 loglike = SeqToOneNormal(Gamma(1.0, 1.0), Float64)
 bnn = BFlux.BNN(net, loglike, y, x)
 
-using ProgressBars
-opt = Flux.ADAGrad()
-θ = randn(bnn.totparams)
-lp(bnn, θ)
-for i in ProgressBar(1:10_000)
-    g = Zygote.gradient(θ -> lp(bnn, θ), θ)
-    Flux.update!(opt, θ, -g[1])
-end
-lp(bnn, θ)
+initθ = randn(bnn.totparams)
+θsgd = BFlux.find_mode_sgd(bnn, 33, initθ, 10_000, 0.000001)
 
 th = BFlux.get_network_params(bnn, θ)
 nethat = bnn.re(th)
@@ -41,15 +34,8 @@ net = Chain(RNN(1, 1), Dense(1, 1))
 loglike = SeqToOneNormal(Gamma(1.0, 1.0), Float64)
 bnn = BFlux.BNN(net, loglike, y, x)
 
-using ProgressBars
-opt = Flux.ADAGrad()
-θ = randn(bnn.totparams)
-lp(bnn, θ)
-for i in ProgressBar(1:10_000)
-    g = Zygote.gradient(θ -> lp(bnn, θ), θ)
-    Flux.update!(opt, θ, -g[1])
-end
-lp(bnn, θ)
+initθ = randn(bnn.totparams)
+θsgd = BFlux.find_mode_sgd(bnn, 33, initθ, 10_000, 0.000001)
 
 th = BFlux.get_network_params(bnn, θ)
 nethat = bnn.re(th)
@@ -63,15 +49,8 @@ net = Chain(RNN(1, 10), Dense(10, 1))
 loglike = SeqToOneNormal(Gamma(1.0, 1.0), Float64)
 bnn = BFlux.BNN(net, loglike, y, x)
 
-using ProgressBars
-opt = Flux.ADAGrad()
-θ = randn(bnn.totparams)
-lp(bnn, θ)
-for i in ProgressBar(1:10_000)
-    g = Zygote.gradient(θ -> lp(bnn, θ), θ)
-    Flux.update!(opt, θ, -g[1])
-end
-lp(bnn, θ)
+initθ = randn(bnn.totparams)
+θsgd = BFlux.find_mode_sgd(bnn, 33, initθ, 10_000, 0.000001)
 
 th = BFlux.get_network_params(bnn, θ)
 nethat = bnn.re(th)

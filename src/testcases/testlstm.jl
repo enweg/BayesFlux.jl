@@ -3,7 +3,7 @@ using BFlux
 using LinearAlgebra
 
 ar1 = AR([0.5])
-y = ar1(;N=100);
+y = ar1(;N=1000);
 x = [hcat(y[i:i+9]...) for i=1:(length(y) - 10)];
 x = to_RNN_format(x);
 y = y[11:end];

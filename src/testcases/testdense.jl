@@ -18,6 +18,8 @@ loglike = FeedforwardNormal(Gamma(1.0, 1.0), Float64)
 bnn = BFlux.BNN(net, loglike, y, x)
 
 θ = BFlux.find_mode(bnn, 10_000; opt = Flux.ADAGrad())
+initθ = randn(bnn.totparams)
+θsgd = BFlux.find_mode_sgd(bnn, 33, initθ, 10_000, 0.000001)
 la = laplace(bnn, 10_000, 20; diag = true) # using 20 modes
 all(la.c) # did all converge? 
 draws = rand(la, 10_000)
