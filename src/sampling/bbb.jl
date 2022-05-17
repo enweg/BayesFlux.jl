@@ -1,5 +1,9 @@
-# Bayes by Backprop implementation
-# Focusing on diagonal covariances and normal reparameterisation
+################################################################################
+# Implementation of Bayes By Backprop as discussed in Blundell, C., Cornebise,
+# J., Kavukcuoglu, K., & Wierstra, D. (2015, June). Weight uncertainty in neural
+# network. In International conference on machine learning (pp. 1613-1622).
+# PMLR.
+################################################################################
 
 using ProgressMeter
 
