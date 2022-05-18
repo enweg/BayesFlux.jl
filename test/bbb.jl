@@ -18,7 +18,7 @@ using LinearAlgebra
         post_mean = inv(X*X' + I)*(X*X'*β̂)
 
         bbb_post = bbb(llike, lpriorβ, randn(3), get_mu_sig, 10, 5_000, 500, y, X)
-        @test isapprox(post_mean, bbb_post[2], atol = 0.05)
+        @test all(isapprox.(post_mean, bbb_post[3], atol = 0.05))
     end
     
     # TODO: also test with variance

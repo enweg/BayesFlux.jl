@@ -1,6 +1,9 @@
 using BFlux
 using Test
 
-include("laplace.jl")
-include("bbb.jl")
-include("modes.jl")
+@testset "BFlux" begin
+    include("laplace.jl")
+    include("bbb.jl")
+    include("modes.jl")
+    include("ggmc.jl")
+end
