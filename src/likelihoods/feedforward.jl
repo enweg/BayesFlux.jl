@@ -3,77 +3,72 @@
 ################################################################################
 
 using Distributions
+using Bijectors
 
 ################################################################################
 # Normal 
 ################################################################################
 
-struct FeedforwardNormal{D<:Distributions.UnivariateDistribution}
-    totparams::Int
-    sigprior::D
-    type::Type
+struct FeedforwardNormal{T, F, D<:Distribution} <: BNNLikelihood
+    num_params_like::Int
+    nc::NetConstructor{T, F}
+    prior_σ::D
 end
-function FeedforwardNormal(sigprior::D, type::Type) where {D<:Distributions.UnivariateDistribution}
-    FeedforwardNormal(1, sigprior, type)
+function FeedforwardNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:Distribution}
+    return FeedforwardNormal(1, nc, prior_σ)
 end
 
-function loglike(bnn::BNN, FN::FeedforwardNormal{D}, θ::AbstractVector, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
-    net_params = get_network_params(bnn, θ)
-    net = bnn.re(net_params)
-    θ = θ[1:FN.totparams]
+function (l::FeedforwardNormal{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
     yhat = vec(net(x))
-    tsig = θ[1]
-    sig = T(invlink(FN.sigprior, tsig))
-    
-    return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf_with_trans(FN.sigprior, sig, true)
+    tdist = transformed(l.prior_σ)
+    sigma = invlink(l.prior_σ, θlike[1])
+    n = length(y)
+
+    # Using reparameterised likelihood 
+    # Usually results in faster gradients
+    return logpdf(MvNormal(zeros(n), I), (y-yhat)./sigma) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(bnn::BNN, FN::FeedforwardNormal{D}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real}
-    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
-    nethats = [bnn.re(np) for np in netparams]
-    sigmas = draws[1,:]
-    sigmas = invlink.([FN.sigprior], sigmas)
-    yhats = [vec(nn(newx)) for nn in nethats]
-    yhats = [rand.(Normal.(yh, sig)) for (yh, sig) in zip(yhats, sigmas)]
-    return hcat(yhats...)
+function predict(l::FeedforwardNormal{T, F, D}, x::Matrix{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
+    yhat = vec(net(x))
+    sigma = invlink(l.prior_σ, θlike[1])
+
+    ypp = rand(MvNormal(yhat, sigma^2*I))
+    return ypp
 end
 
 ################################################################################
 # T Distribution fixed df 
 ################################################################################
 
-struct FeedforwardTDist{D<:Distributions.UnivariateDistribution, T}
-    totparams::Int
-    sigprior::D
-    type::Type
-    nu::T
+struct FeedforwardTDist{T, F, D<:Distribution} <: BNNLikelihood
+    num_params_like::Int
+    nc::NetConstructor{T, F}
+    prior_σ::D
+    ν::T
 end
-function FeedforwardTDist(sigprior::D, nu::T) where {D<:Distributions.UnivariateDistribution, T<:Real}
-    FeedforwardTDist(1, sigprior, T, nu)
+function FeedforwardTDist(nc::NetConstructor{T, F}, prior_σ::D, ν::T) where {T, F, D}
+    return FeedforwardTDist(1, nc, prior_σ, ν)
 end
 
-function loglike(bnn::BNN, FT::FeedforwardTDist{D, R}, θ::AbstractVector, y::VecOrMat{T}, x::Matrix{T}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
-    net_params = get_network_params(bnn, θ)
-    net = bnn.re(net_params)
-    θ = θ[1:FT.totparams]
+function (l::FeedforwardTDist{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
     yhat = vec(net(x))
-    tsig = θ[1]
-    sig = T(invlink(FT.sigprior, tsig))
-    N = length(y)
+    tdist = transformed(l.prior_σ)
+    sigma = invlink(l.prior_σ, θlike[1])
+    n = length(y)
 
-    return sum(logpdf.(TDist(FT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(FT.sigprior, sig, true)
+    return sum(logpdf.(TDist(l.ν), (y-yhat)./sigma)) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(bnn::BNN, FT::FeedforwardTDist{D, R}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real, R<:Real}
-    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
-    nethats = [bnn.re(np) for np in netparams]
-    sigmas = draws[1,:]
-    sigmas = invlink.([FT.sigprior], sigmas)
-    yhats = [vec(nn(newx)) for nn in nethats]
-    yhats = [yh .+ sig*rand(TDist(FT.nu)) for (yh, sig) in zip(yhats, sigmas)]
-    return hcat(yhats...)
+function predict(l::FeedforwardTDist{T, F, D}, x::Matrix{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
+    yhat = vec(net(x))
+    sigma = invlink(l.prior_σ, θlike[1])
+    n = length(yhat)
+
+    ypp = sigma*rand(TDist(l.ν), n) + yhat
+    return ypp
 end
-
-
-
-    

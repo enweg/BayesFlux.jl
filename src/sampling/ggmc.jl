@@ -4,9 +4,10 @@
 # Garriga-Alonso, A., & Fortuin, V. (2021). Exact langevin dynamics with stochastic gradients. arXiv preprint arXiv:2102.01691.
 using LinearAlgebra
 using Parameters
+using TimerOutputs
 
 U(θ, llike, lpriorθ, y, x) = -llike(θ, y, x) - lpriorθ(θ)
-K(m, M) = 1/2 * m' * inv(M) * m
+K(m, Minv) = 1/2 * m' * Minv * m
 
 ################################################################################
 #### Mass Matrix Adaptation 
@@ -28,7 +29,8 @@ function (m_adapter::MRMSPropAdapter)(g::AbstractArray)
     m_adapter.v .= β*v .+ (1-β)*g.*g
     G = diagm(1 ./ (λ .+ sqrt.(v)))
     Minv = G
-    M = inv(G)
+    # M = inv(G)
+    M = diagm(1.0 ./ diag(G))
     Mhalf = sqrt.(M)
     return Minv, M, Mhalf
 end
@@ -78,14 +80,14 @@ end
 ∇U(θ, llike, lpriorθ, y, x, nbatches) = Zygote.gradient(θ -> nbatches * -llike(θ, y, x) - lpriorθ(θ), θ)[1]
 
 
-function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
+function ggmc(llike::F1, lpriorθ::F2, batchsize::Int, y::Vector{T}, x::Union{Vector{Matrix{T}}, Matrix{T}}, 
               initθ::Vector{T}, maxiter::Int;
               l = 0.01, β = 0.5, beta = 0.5, temp = 1, keep_every = 10, 
               adapruns = 5000, 
               adaptM = true, m_adapter = MRMSPropAdapter(size(initθ)),
               adapth = true, h_adapter = hStochasticAdapter(sqrt(l / length(y)); goal_accept_rate = 0.55),
               showprogress = true, debug = false, 
-              p = Progress(maxiter * floor(Int, length(y)/batchsize); dt=1, desc="GGMC ...", enabled = showprogress)) where {T <: Real}
+              p = Progress(maxiter * floor(Int, length(y)/batchsize); dt=1, desc="GGMC ...", enabled = showprogress)) where {T <: Real, F1, F2}
     
     # Allowing for unicode/no-unicode
     β = beta
@@ -110,6 +112,7 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
     accept[1] = 1
     lastθi = 1 # column of last added samples
 
+    err = similar(θ)
     momentum14 = zeros(size(θ))
     momentum12 = zeros(size(θ))
     momentum34 = zeros(size(θ))
@@ -125,39 +128,39 @@ function ggmc(llike::Function, lpriorθ::Function, batchsize::Int, y::Vector{T},
         yshuffel, xshuffel = sgd_shuffle(y, x) 
         for b=1:num_batches 
             a = exp(-γ*h)
-            xbatch = sgd_x_batch(xshuffel, b, batchsize)
-            ybatch = sgd_y_batch(yshuffel, b, batchsize)
+            @timeit "xbatch" xbatch = sgd_x_batch(xshuffel, b, batchsize)
+            @timeit "ybatch" ybatch = sgd_y_batch(yshuffel, b, batchsize)
 
-            g = ∇U(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
-            g = clip_gradient_value!(g)
-            if any(isnan.(g))
+            @timeit "grad" g = ∇U(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
+            @timeit "clipgrad" clip_gradient_value!(g)
+            @timeit "checkgrad" if any(isnan.(g))
                 @warn "NaN in gradient. Returning results obtained until now."
                 return samples[:, 1:lastθi], hastings[1:lastθi], momenta[:, 1:((t-1)*num_batches + b)]
             end
 
-            if lastθi <= adapruns && adaptM
+            @timeit "adaptM" if lastθi <= adapruns && adaptM
                 Minv, M, Mhalf = m_adapter(g)
             end
 
-            momentum14 .= sqrt(a)*momentum .+ sqrt((1-a)*temp)*Mhalf*randn(length(θ))
-            momentum12 .= momentum14 .- h/2 * g
-            θ .= θ .+ h*Minv*momentum12
+            @timeit "m14" momentum14 .= sqrt(a)*momentum .+ sqrt((1-a)*temp)*Mhalf*rand!(Normal(), err)
+            @timeit "m12" momentum12 .= momentum14 .- h/2 * g
+            @timeit "thetaupdate" θ .= θ .+ h*Minv*momentum12
             θprop = θ
 
-            g = ∇U(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
-            g = clip_gradient_value!(g)
-            if any(isnan.(g))
+            @timeit "grad" g = ∇U(θ, llike, lpriorθ, ybatch, xbatch, num_batches)
+            @timeit "clipgrad" clip_gradient_value!(g)
+            @timeit "checkgrad" if any(isnan.(g))
                 @warn "NaN in gradient. Returning results until obtained until now."
                 return samples[:, 1:lastθi], hastings[1:lastθi], momenta[:, 1:((t-1)*num_batches + b)]
             end
 
-            momentum34 .= momentum12 .- h/2 * g 
-            momentum .= sqrt(a)*momentum34 .+ sqrt((1-a)*temp)*Mhalf*randn(length(θ))
+            @timeit "m34" momentum34 .= momentum12 .- h/2 * g 
+            @timeit "mfinal" momentum .= sqrt(a)*momentum34 .+ sqrt((1-a)*temp)*Mhalf*rand!(Normal(), err)
             momenta[:, (t-1)*num_batches + b] = momentum
 
-            lMH += K(momentum34, M) - K(momentum14, M)
+            @timeit "add LMH" lMH += K(momentum34, Minv) - K(momentum14, Minv)
 
-            if mod((t-1)*num_batches + b, keep_every) == 0
+            @timeit "reject" if mod((t-1)*num_batches + b, keep_every) == 0
                 # time to evaluate MH ratio and keep last draw or start new 
                 lMH += U(θ, llike, lpriorθ, y, x)
                 lMH /= -temp
