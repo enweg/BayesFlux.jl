@@ -8,71 +8,68 @@ using LinearAlgebra
 # Sequence to one Normal 
 ################################################################################
 
-struct SeqToOneNormal{D<:Distributions.UnivariateDistribution}
-    totparams::Int
-    sigprior::D
-    type::Type
+
+struct SeqToOneNormal{T, F, D<:Distribution} <: BNNLikelihood
+    num_params_like::Int
+    nc::NetConstructor{T, F}
+    prior_σ::D
 end
-function SeqToOneNormal(sigprior::D, type::Type) where {D<:Distributions.UnivariateDistribution}
-    SeqToOneNormal(1, sigprior, type)
+function SeqToOneNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:Distribution}
+    return SeqToOneNormal(1, nc, prior_σ)
 end
 
-function loglike(bnn::BNN, STON::SeqToOneNormal{D}, θ::AbstractVector, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution}
-    net_params = get_network_params(bnn, θ)
-    net = bnn.re(net_params)
-    θ = θ[1:STON.totparams]
-    Flux.reset!(net)
+function (l::SeqToOneNormal{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
     yhat = vec([net(xx) for xx in x][end])
-    tsig = θ[1]
-    sig = T(invlink(STON.sigprior, tsig))
+    tdist = transformed(l.prior_σ)
+    sigma = invlink(l.prior_σ, θlike[1])
+    n = length(y)
 
-    return sum(logpdf.(Normal.(yhat, sig), y)) + logpdf_with_trans(STON.sigprior, sig, true)
+    # Using reparameterised likelihood 
+    # Usually results in faster gradients
+    return logpdf(MvNormal(zeros(n), I), (y-yhat)./sigma) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(bnn::BNN, STON::SeqToOneNormal{D}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real}
-    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
-    nethats = [bnn.re(np) for np in netparams]
-    sigmas = draws[1,:]
-    sigmas = invlink.([STON.sigprior], sigmas)
-    yhats = [vec([nn(xx) for xx in newx][end]) for nn in nethats]
-    yhats = [yh .+ sig*randn(length(yh)) for (yh, sig) in zip(yhats, sigmas)]
-    return hcat(yhats...)
+function predict(l::SeqToOneNormal{T, F, D}, x::Vector{Matrix{T}}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
+    yhat = vec([net(xx) for xx in x][end])
+    sigma = invlink(l.prior_σ, θlike[1])
+
+    ypp = rand(MvNormal(yhat, sigma^2*I))
+    return ypp
 end
+
 
 ################################################################################
 # Sequence to one TDIST
 ################################################################################
 
-
-struct SeqToOneTDist{D<:Distributions.UnivariateDistribution, T}
-    totparams::Int
-    sigprior::D
-    type::Type
-    nu::T
+struct SeqToOneTDist{T, F, D<:Distribution} <: BNNLikelihood
+    num_params_like::Int
+    nc::NetConstructor{T, F}
+    prior_σ::D
+    ν::T
 end
-function SeqToOneTDist(sigprior::D, nu::T) where {D<:Distributions.UnivariateDistribution, T<:Real}
-    SeqToOneTDist(1, sigprior, T, nu)
+function SeqToOneTDist(nc::NetConstructor{T, F}, prior_σ::D, ν::T) where {T, F, D}
+    return SeqToOneTDist(1, nc, prior_σ, ν)
 end
 
-function loglike(bnn::BNN, STOT::SeqToOneTDist{D, R}, θ::AbstractVector, y::VecOrMat{T}, x::Vector{Matrix{T}}) where {C<:Flux.Chain, T<:Real, D<:Distributions.UnivariateDistribution, R<:Real}
-    net_params = get_network_params(bnn, θ)
-    net = bnn.re(net_params)
-    θ = θ[1:STOT.totparams]
-    Flux.reset!(net)
+function (l::SeqToOneTDist{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
     yhat = vec([net(xx) for xx in x][end])
-    tsig = θ[1]
-    sig = T(invlink(STOT.sigprior, tsig))
-    N = length(y)
+    tdist = transformed(l.prior_σ)
+    sigma = invlink(l.prior_σ, θlike[1])
+    n = length(y)
 
-    return sum(logpdf.(TDist(STOT.nu), (y .- yhat)./sig)) - N*log(sig) + logpdf_with_trans(STOT.sigprior, sig, true)
+    return sum(logpdf.(TDist(l.ν), (y-yhat)./sigma)) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(bnn::BNN, STOT::SeqToOneTDist{D, R}, draws::Matrix{T}; newx = bnn.x) where {D<:Distributions.UnivariateDistribution, T<:Real, R<:Real}
-    netparams = [get_network_params(bnn, θ) for θ in eachcol(draws)]
-    nethats = [bnn.re(np) for np in netparams]
-    sigmas = draws[1,:]
-    sigmas = invlink.([STOT.sigprior], sigmas)
-    yhats = [vec([nn(xx) for xx in newx][end]) for nn in nethats]
-    yhats = [yh .+ sig*rand(TDist(STOT.nu)) for (yh, sig) in zip(yhats, sigmas)]
-    return hcat(yhats...)
+function predict(l::SeqToOneTDist{T, F, D}, x::Vector{Matrix{T}}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+    net = l.nc(θnet)
+    yhat = vec([net(xx) for xx in x][end])
+    sigma = invlink(l.prior_σ, θlike[1])
+    n = length(yhat)
+
+    ypp = sigma*rand(TDist(l.ν), n) + yhat
+    return ypp
 end
