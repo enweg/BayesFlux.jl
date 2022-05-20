@@ -33,4 +33,27 @@ using Bijectors
         @test σdiff < 0.1
         
     end
+
+    @testset "NN Linear Regresssion" for _ in 1:10 
+        n = 1000
+        k = 5
+        β = randn(k)
+        X = randn(k, n)
+        y = X'*β + randn(n)
+
+        net = Chain(Dense(k, 1))
+        loglike = BFlux.FeedforwardNormal(Gamma(2.0, 2.0), Float64)
+        bnn = BNN(net, loglike, y, X)
+
+        samples = ggmc(bnn, 100, rand(bnn.totparams).-0.5, 4_000; 
+                       keep_every = 1, adapruns = 1000,
+                       h_adapter = BFlux.hStochasticAdapter(0.1; goal_accept_rate = 0.65))
+        s = samples[1][:, 1001:end]
+        netparams = reduce(hcat, [BFlux.get_network_params(bnn, θ) for θ in eachcol(s)])
+        βhat = mean(netparams; dims = 2)
+        # βhat constains constant as last value 
+        βhat = βhat[1:end-1]
+
+        @test maximum(abs, β - βhat) < 0.1
+    end
 end
