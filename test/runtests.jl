@@ -13,6 +13,9 @@ using Test
     include("./networkpriors.jl")
     # initialisers 
     include("./initialisers.jl")
+    # BNN basic operations
+    include("./bnn.jl")
+
 
     # include("laplace.jl")
     # include("bbb.jl")
