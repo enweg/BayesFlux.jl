@@ -10,6 +10,9 @@ include("./likelihoods/seq_to_one.jl")
 include("./netpriors/abstract.jl")
 include("./netpriors/gaussian.jl")
 
+include("./initialisers/abstract.jl")
+include("./initialisers/basics.jl")
+
 include("./model/posterior.jl")
 include("./layers/dense.jl")
 include("./layers/recurrent.jl")
@@ -31,6 +34,9 @@ export SeqToOneNormal, SeqToOneTDist
 
 export NetworkPrior, sample_prior 
 export GaussianPrior
+
+export BNNInitialiser
+export InitialiseAllSame
 
 
 
