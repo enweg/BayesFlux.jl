@@ -18,7 +18,10 @@ function FeedforwardNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D
     return FeedforwardNormal(1, nc, prior_σ)
 end
 
-function (l::FeedforwardNormal{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+function (l::FeedforwardNormal{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+    θnet = T.(θnet)
+    θlike = T.(θlike)
+
     net = l.nc(θnet)
     yhat = vec(net(x))
     tdist = transformed(l.prior_σ)
@@ -30,7 +33,10 @@ function (l::FeedforwardNormal{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Vect
     return logpdf(MvNormal(zeros(n), I), (y-yhat)./sigma) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::FeedforwardNormal{T, F, D}, x::Matrix{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+function predict(l::FeedforwardNormal{T, F, D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+    θnet = T.(θnet)
+    θlike = T.(θlike)
+
     net = l.nc(θnet)
     yhat = vec(net(x))
     sigma = invlink(l.prior_σ, θlike[1])
@@ -53,7 +59,10 @@ function FeedforwardTDist(nc::NetConstructor{T, F}, prior_σ::D, ν::T) where {T
     return FeedforwardTDist(1, nc, prior_σ, ν)
 end
 
-function (l::FeedforwardTDist{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+function (l::FeedforwardTDist{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+    θnet = T.(θnet)
+    θlike = T.(θlike)
+
     net = l.nc(θnet)
     yhat = vec(net(x))
     tdist = transformed(l.prior_σ)
@@ -63,7 +72,10 @@ function (l::FeedforwardTDist{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Vecto
     return sum(logpdf.(TDist(l.ν), (y-yhat)./sigma)) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::FeedforwardTDist{T, F, D}, x::Matrix{T}, θnet::Vector{T}, θlike::Vector{T}) where {T, F, D}
+function predict(l::FeedforwardTDist{T, F, D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+    θnet = T.(θnet)
+    θlike = T.(θlike)
+
     net = l.nc(θnet)
     yhat = vec(net(x))
     sigma = invlink(l.prior_σ, θlike[1])
