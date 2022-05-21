@@ -12,7 +12,7 @@ function GaussianPrior(nc::NetConstructor{T, F}, σ0::T = T(1.0)) where {T, F}
     return GaussianPrior(0, nc, σ0)
 end
 
-function (gp::GaussianPrior{T, F})(θnet::Vector{T}, θhyper::Vector{T}) where {T, F}
+function (gp::GaussianPrior{T, F})(θnet::AbstractVector{T}, θhyper::AbstractVector{T}) where {T, F}
     n = length(θnet)
     return logpdf(MvNormal(zeros(T, n), gp.σ0^2*I), θnet)
 end

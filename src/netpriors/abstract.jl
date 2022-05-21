@@ -30,6 +30,6 @@ Each NetworkPrior must also implement a sample function returning a vector
 """
 abstract type NetworkPrior end
 
-(np::NetworkPrior)(θnet, θhyper) = error("Seems like your network prior is not implemented correctly. Please consult the documentation for NetworkPrior.")
+(np::NetworkPrior)(θnet::AbstractVector, θhyper::AbstractVector) = error("Seems like your network prior is not implemented correctly. Please consult the documentation for NetworkPrior.")
 
 sample_prior(np::NetworkPrior, rng::Random.AbstractRNG) = error("Seems like your network prior is not implemented correctly. Please consult the documentation for NetworkPrior.")
