@@ -16,7 +16,7 @@ using BFlux
         @test length(θhyper) == prior.num_params_hyper
         @test length(θlike) == like.num_params_like
 
-        draws = [vcat(init()...) for _ in 1:100_000]
+        draws = [vcat(init()...) for _ in 1:1_000_000]
         draws = reduce(hcat, draws)
         mindraw = minimum(draws; dims = 2)
         maxdraw = maximum(draws; dims = 2)
