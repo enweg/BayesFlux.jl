@@ -48,7 +48,7 @@ function calculate_epochs(s::SGLD{T}, nbatches, nsamples; continue_sampling = fa
     return epochs
 end
 
-function update!(s::SGLD{T}, θ::AbstractVector{T}, ∇θ) where {T}
+function update!(s::SGLD{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
     α = stepsize(s.stepsize_a, s.stepsize_b, s.stepsize_γ, s.t)
     α < s.min_stepsize && !s.didinform && @info "Using minstepsize=$(s.minstepsize) from now."
     α = max(α, s.min_stepsize)
