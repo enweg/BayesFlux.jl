@@ -28,7 +28,7 @@ function find_mode(bnn::BNN, batchsize::Int, epochs::Int, optimiser::BNNModeFind
 
     θnet, θhyper, θlike = bnn.init()
     θ = vcat(θnet, θhyper, θlike)
-    batcher = Flux.Data.DataLoader((x = bnn.x, y = bnn.y), batchsize = batchsize, shuffle = false)
+    batcher = Flux.Data.DataLoader((x = bnn.x, y = bnn.y), batchsize = batchsize, shuffle = shuffle, partial = partial)
     num_batches = length(batcher)
     prog = Progress(num_batches * epochs; desc = "Finding Mode...", 
         enabled = showprogress, showspeed = true)
