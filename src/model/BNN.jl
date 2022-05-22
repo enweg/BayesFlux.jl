@@ -48,6 +48,13 @@ function ∇loglikeprior(bnn::B, θ::Vector{T},
     return v, g[1]
 end
 
+function clip_gradient_value!(g, maxval=15)
+    maxabs_g_val = maximum(abs.(g))
+    if maxabs_g_val > maxval
+        g .= maxval/maxabs_g_val .* g
+    end
+    return g
+end
 # function lprior(bnn::BNN, θ::AbstractVector)
 #     θ = θ[bnn.loglikelihood.totparams+1:end]
 #     T = bnn.type
@@ -70,12 +77,4 @@ end
 
 # function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, y::Vector{T}) where {B<:BNN, T<:Real}
 #     return lprior(bnn, θ) + loglike(bnn, bnn.loglikelihood, θ, y, x)
-# end
-
-# function clip_gradient_value!(g, maxval=15)
-#     maxabs_g_val = maximum(abs.(g))
-#     if maxabs_g_val > maxval
-#         g .= maxval/maxabs_g_val .* g
-#     end
-#     return g
 # end

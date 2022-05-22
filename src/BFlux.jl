@@ -5,6 +5,9 @@ export BNN
 export split_params
 export loglikeprior, ∇loglikeprior
 
+include("./layers/dense.jl")
+include("./layers/recurrent.jl")
+
 include("./model/deconstruct.jl")
 export destruct
 
@@ -30,25 +33,28 @@ include("./inference/mode/flux.jl")
 export BNNModeFinder, find_mode, step!
 export FluxModeFinder
 
+include("./inference/mcmc/abstract.jl")
+include("./inference/mcmc/sgld.jl")
+export MCMCState, mcmc
+export SGLD
 
-include("./model/posterior.jl")
-include("./layers/dense.jl")
-include("./layers/recurrent.jl")
-include("./optimise/modes.jl")
-include("./sampling/laplace.jl")
-include("./sampling/advi.jl")
-include("./sampling/bbb.jl")
-include("./sampling/sgld.jl")
-include("./sampling/ggmc.jl")
-include("./simulations/AR.jl")
-include("./utils/rnn_utils.jl")
 
-###### Exports
-export posterior_predict
-export lp, reconstruct_sample
-export find_mode, find_mode_sgd
-export laplace, SIR_laplace
-export advi, bbb
-export sgld, ggmc
+# include("./model/posterior.jl")
+# include("./optimise/modes.jl")
+# include("./sampling/laplace.jl")
+# include("./sampling/advi.jl")
+# include("./sampling/bbb.jl")
+# include("./sampling/sgld.jl")
+# include("./sampling/ggmc.jl")
+# include("./simulations/AR.jl")
+# include("./utils/rnn_utils.jl")
+
+# ###### Exports
+# export posterior_predict
+# export lp, reconstruct_sample
+# export find_mode, find_mode_sgd
+# export laplace, SIR_laplace
+# export advi, bbb
+# export sgld, ggmc
 
 end # module

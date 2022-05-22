@@ -17,6 +17,8 @@ using Test
     include("./bnn.jl")
     # Mode Finding
     include("./modes.jl")
+    # MCMC
+    include("./sgld.jl")
 
 
     # include("laplace.jl")
