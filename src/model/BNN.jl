@@ -12,13 +12,15 @@ struct BNN{Tx, Ty, L, P, I}
     start_θnet::Int
     start_θhyper::Int
     start_θlike::Int
+    num_total_params::Int
 end
 
 function BNN(x, y, like, prior, init)
     start_θnet = 1
     start_θhyper = start_θnet + like.nc.num_params_network
     start_θlike = prior.num_params_hyper == 0 ? start_θhyper : start_θhyper + prior.num_params_hyper - 1
-    return BNN(x, y, like, prior, init, start_θnet, start_θhyper, start_θlike)
+    num_total_params = like.nc.num_params_network + like.num_params_like + prior.num_params_hyper
+    return BNN(x, y, like, prior, init, start_θnet, start_θhyper, start_θlike, num_total_params)
 end
 
 function split_params(bnn::B, θ::Vector{T}) where {B<:BNN, T}

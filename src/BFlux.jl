@@ -25,6 +25,12 @@ include("./initialisers/basics.jl")
 export BNNInitialiser
 export InitialiseAllSame
 
+include("./inference/mode/abstract.jl")
+include("./inference/mode/flux.jl")
+export BNNModeFinder, find_mode, step!
+export FluxModeFinder
+
+
 include("./model/posterior.jl")
 include("./layers/dense.jl")
 include("./layers/recurrent.jl")

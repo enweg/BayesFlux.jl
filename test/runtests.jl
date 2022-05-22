@@ -15,6 +15,8 @@ using Test
     include("./initialisers.jl")
     # BNN basic operations
     include("./bnn.jl")
+    # Mode Finding
+    include("./modes.jl")
 
 
     # include("laplace.jl")
