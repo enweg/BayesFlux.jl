@@ -19,6 +19,7 @@ using Test
     include("./modes.jl")
     # MCMC
     include("./sgld.jl")
+    include("./ggmc.jl")
 
 
     # include("laplace.jl")
