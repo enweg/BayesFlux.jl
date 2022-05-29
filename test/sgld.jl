@@ -43,7 +43,7 @@ end
     @testset "Linear Regression" begin
         ntests = 10
         results = fill(false, ntests, 5)
-        for i=1:10
+        for i=1:ntests
             results[i, :] = test_SGLD_regression() 
         end
         pct_pass = mean(results; dims = 2)
