@@ -55,26 +55,26 @@ function clip_gradient_value!(g, maxval=15)
     end
     return g
 end
-# function lprior(bnn::BNN, θ::AbstractVector)
-#     θ = θ[bnn.loglikelihood.totparams+1:end]
-#     T = bnn.type
-#     logprior = zero(T)
-#     s = 1
-#     for bl in bnn.blayers 
-#         totparams = bl.totparams
-#         e = s + totparams - 1
-#         β = view(θ, s:e)
-#         s += totparams 
-#         logprior += bl.lp(β)
-#     end
-    
-#     return logprior
-# end
 
-# function lp(bnn::B, θ::AbstractVector) where {B<:BNN}
-#     return lp(bnn, θ, bnn.x, bnn.y)
-# end
+"""
+Samples from the prior predictive. 
 
-# function lp(bnn::B, θ::AbstractVector, x::Union{Matrix{T}, Vector{Matrix{T}}}, y::Vector{T}) where {B<:BNN, T<:Real}
-#     return lprior(bnn, θ) + loglike(bnn, bnn.loglikelihood, θ, y, x)
-# end
+# Arguments
+- `bnn` a BNN
+- `predict` a function taking a network and returning a vector of predictions
+- `n` number of samples
+
+# Optional Arguments
+
+- `rng` a RNG
+"""
+function sample_prior_predictive(bnn::BNN, predict::Function, n::Int = 1;
+    rng::Random.AbstractRNG = Random.GLOBAL_RNG)
+
+    prior = bnn.prior
+    θnets = [sample_prior(prior, rng) for i=1:n]
+    nets = [prior.nc(θ) for θ in θnets]
+    ys = [predict(net) for net in nets]
+
+    return ys
+end
