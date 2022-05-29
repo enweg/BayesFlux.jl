@@ -31,7 +31,7 @@ function split_params(bnn::B, θ::Vector{T}) where {B<:BNN, T}
 end
 
 function loglikeprior(bnn::B, θ::Vector{T}, 
-    x::Union{Vector{Matrix{T}}, Matrix{T}}, 
+    x::Union{Vector{Matrix{T}}, Matrix{T}, Array{T, 3}}, 
     y::Union{Vector{T}, Matrix{T}}; num_batches = T(1)) where {B<:BNN, T}
 
     θnet, θhyper, θlike = split_params(bnn, θ)
@@ -39,7 +39,7 @@ function loglikeprior(bnn::B, θ::Vector{T},
 end
 
 function ∇loglikeprior(bnn::B, θ::Vector{T}, 
-    x::Union{Vector{Matrix{T}}, Matrix{T}}, 
+    x::Union{Vector{Matrix{T}}, Matrix{T}, Array{T, 3}}, 
     y::Union{Vector{T}, Matrix{T}}; num_batches = T(1)) where {B<:BNN, T}
 
     llp(θ) = loglikeprior(bnn, θ, x, y; num_batches = num_batches)

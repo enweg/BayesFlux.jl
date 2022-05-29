@@ -33,7 +33,7 @@ the posterior predictive given network parameters and likelihood parameters.
 """
 abstract type BNNLikelihood end
 
-function (l::BNNLikelihood)(x::Union{Vector{Matrix{T}}, Matrix{T}}, 
+function (l::BNNLikelihood)(x::Union{Vector{Matrix{T}}, Matrix{T}, Array{T, 3}}, 
   y::Union{Vector{T}, Matrix{T}}, 
   θnet::AbstractVector, θlike::AbstractVector) where {T}
 
