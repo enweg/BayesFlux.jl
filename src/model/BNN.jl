@@ -78,3 +78,22 @@ function sample_prior_predictive(bnn::BNN, predict::Function, n::Int = 1;
 
     return ys
 end
+
+"""
+Get the networks corresponding to posterior draws.
+
+# Arguments
+- `bnn` a BNN
+- `ch` A Matrix of draws (columns are θ)
+"""
+function get_posterior_networks(bnn::BNN, ch::AbstractMatrix{T}) where {T}
+    nets = [bnn.prior.nc(Float32.(split_params(bnn, ch[:, i])[1])) for i=1:size(ch, 2)]
+    return nets
+end
+
+function sample_posterior_predict(bnn::BNN, ch::AbstractMatrix{T}; x = bnn.x) where {T}
+    θnets = [T.(split_params(bnn, ch[:, i])[1]) for i=1:size(ch, 2)]
+    θlikes = [T.(split_params(bnn, ch[:, i])[3]) for i=1:size(ch, 2)]
+    ys = reduce(hcat, [predict(bnn.like, x, θnet, θlike) for (θnet, θlike) in zip(θnets, θlikes)])
+    return ys
+end

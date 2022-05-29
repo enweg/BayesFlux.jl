@@ -4,7 +4,7 @@ include("./model/BNN.jl")
 export BNN
 export split_params
 export loglikeprior, ∇loglikeprior
-export sample_prior_predictive
+export sample_prior_predictive, get_posterior_networks, sample_posterior_predict
 
 include("./layers/dense.jl")
 include("./layers/recurrent.jl")
