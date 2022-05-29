@@ -32,7 +32,8 @@ calculate_epochs(sampler::MCMCState, nbatches, nsamples; continue_sampling = fal
 update!(sampler::MCMCState, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T} = error("$(typeof(sampler)) has not implemented an update! method. Please consult the documentation for MCMCState")
 
 function mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState; 
-    shuffle = true, partial = true, showprogress = true, continue_sampling = false)
+    shuffle = true, partial = true, showprogress = true, continue_sampling = false, 
+    θstart::AbstractVector{T} = vcat(bnn.init()...)) where {T}
 
     if !partial && !shuffle 
         @warn """shuffle and partial should not be both false unless the data is
@@ -44,16 +45,18 @@ function mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState;
     if continue_sampling 
         θ = sampler.samples[:, end]
     else 
-        θnet, θhyper, θlike = bnn.init()
-        θ = vcat(θnet, θhyper, θlike)
+        θ = θstart
     end
+
+    @info "Starting sampling at $θ"
+    @info "Stating lπ = $(loglikeprior(bnn, θ, bnn.x, bnn.y))"
 
     batcher = Flux.Data.DataLoader((x = bnn.x, y = bnn.y), 
         batchsize = batchsize, shuffle = shuffle, partial = partial)
 
     num_batches = length(batcher)
     tosample = continue_sampling ? numsamples - sampler.nsampled : numsamples
-    prog = Progress(tosample; desc = "Finding Mode...", 
+    prog = Progress(tosample; desc = "Sampling...", 
         enabled = showprogress, showspeed = true)
 
     ∇θ(θ, x, y) = ∇loglikeprior(bnn, θ, x, y; num_batches = num_batches)
@@ -68,7 +71,7 @@ function mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState;
             nsampled == numsamples && break
             θ = update!(sampler, θ, bnn, θ -> ∇θ(θ, x, y))
             nsampled = sampler.nsampled
-            next!(prog)
+            ProgressMeter.update!(prog, nsampled)
         end
     end
     

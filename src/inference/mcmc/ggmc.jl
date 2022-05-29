@@ -34,7 +34,7 @@ function (ladapter::StepsizeStochasticOptAdapter)(s::MCMCState, lmh::T) where {T
     @unpack κ, goal_accept_rate, t = ladapter 
     H = goal_accept_rate - min(exp(lmh), T(1)) 
     η = t^(-κ)
-    s.l = exp(log(s.l) + η*H)
+    s.l = exp(log(s.l) - η*H)
     ladapter.t == ladapter.adaptation_steps && @info "Final l = $(s.l)"
     ladapter.t += 1
     return s.l
@@ -86,6 +86,34 @@ function (madapter::MassRMSPropAdapter)(s::MCMCState, θ::AbstractVector{T}, g::
     t == adapt_steps && @info "Finished adapting Mass Matrix M = $M"
     madapter.t += 1
     return M, Mhalf, Minv
+end
+
+"""
+Diagonal Mass adapter via variance
+TODO: Very inefficient currently
+"""
+mutable struct MassVarianceAdapter <: MassAdapter
+    start_after::Int
+    adapt_steps::Int
+    t::Int
+end
+MassVarianceAdapter(start_after = 100, adapt_steps = 500) = MassVarianceAdapter(start_after, adapt_steps, 1)
+function (madapter::MassVarianceAdapter)(s::MCMCState, θ::AbstractVector{T}, g::AbstractVector{T}) where {T}
+    @unpack start_after, adapt_steps, t = madapter
+    if t <= start_after || t > start_after + adapt_steps
+        madapter.t += 1
+        return s.M, s.Mhalf, s.Minv
+    end
+    prop_Minv = Diagonal(diagm(vec(var(s.samples; dims = 2))))
+    prop_M = Diagonal(diagm(T(1) ./ diag(prop_Minv)))
+    prop_Mhalf = sqrt(prop_M)
+    if !any(isnan.(prop_M) .|| isinf.(prop_M) .|| isinf.(prop_Minv))
+        print("adapting M")
+        s.M, s.Mhalf, s.Minv = prop_M, prop_Mhalf, prop_Minv
+    end
+    t == start_after + adapt_steps && @info "Finished adapting Mass Matrix M = $(s.M)"
+    madapter.t += 1
+    return s.M, s.Mhalf, s.Minv
 end
 
 
