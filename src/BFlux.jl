@@ -36,11 +36,15 @@ export FluxModeFinder
 include("./inference/mcmc/abstract.jl")
 include("./inference/mcmc/sgld.jl")
 include("./inference/mcmc/ggmc.jl")
+# include("./inference/vi/advi.jl")
+include("./inference/vi/bbb.jl")
 export MCMCState, mcmc
 export SGLD
 export GGMC
-export MassAdapter, MassIdentityAdapter, MassRMSPropAdapter
+export MassAdapter, MassIdentityAdapter, MassRMSPropAdapter, MassVarianceAdapter
 export StepsizeAdapter, StepsizeConstantAdapter, StepsizeStochasticOptAdapter
+# export advi
+export bbb
 
 
 # include("./model/posterior.jl")
