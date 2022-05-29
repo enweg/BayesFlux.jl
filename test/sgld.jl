@@ -1,15 +1,14 @@
 # Testing SGLD
 using BFlux
 using Flux, Distributions, Random
+using ReTest
 
 function test_SGLD_regression(;k=5, n=100_000)
-    k = 5
-    n = 100_000
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x'*β + 1f0*randn(Float32, n)
 
-    net = Chain(Dense(5, 1))
+    net = Chain(Dense(k, 1))
     nc = destruct(net)
     sigma_prior = Gamma(2.0f0, 0.5f0)
     like = FeedforwardNormal(nc, sigma_prior)
