@@ -50,7 +50,7 @@ end
 
 function update!(s::SGLD{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
     α = stepsize(s.stepsize_a, s.stepsize_b, s.stepsize_γ, s.t)
-    α < s.min_stepsize && !s.didinform && @info "Using minstepsize=$(s.minstepsize) from now."
+    α < s.min_stepsize && !s.didinform && @info "Using minstepsize=$(s.min_stepsize) from now."
     α = max(α, s.min_stepsize)
 
     v, g = ∇θ(θ)
