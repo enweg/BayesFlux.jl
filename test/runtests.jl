@@ -17,8 +17,9 @@ include("./bnn.jl")
 # Mode Finding
 include("./modes.jl")
 # MCMC
-# include("./sgld.jl")
-# include("./ggmc.jl")
+include("./sgld.jl")
+include("./ggmc.jl")
 include("./amh.jl")
+include("./hmc.jl")
 # vi
-# include("./bbb.jl")
+include("./bbb.jl")
