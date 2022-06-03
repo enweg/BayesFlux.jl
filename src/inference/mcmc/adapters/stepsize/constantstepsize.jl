@@ -6,4 +6,4 @@ struct ConstantStepsize{T} <: StepsizeAdapter
     l::T
 end
 
-(sadapter::ConstantStepsize{T})(s::MCMCState, mh_probability) = sadapter.l
+(sadapter::ConstantStepsize{T})(s::MCMCState, mh_probability) where {T} = sadapter.l
