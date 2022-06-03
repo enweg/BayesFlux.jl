@@ -34,18 +34,37 @@ include("./inference/mode/flux.jl")
 export BNNModeFinder, find_mode, step!
 export FluxModeFinder
 
+# Abstract MCMC
 include("./inference/mcmc/abstract.jl")
+# Mass Adapters
+include("./inference/mcmc/adapters/mass/abstract_mass.jl")
+include("./inference/mcmc/adapters/mass/diagcovariancemassadapter.jl")
+include("./inference/mcmc/adapters/mass/fixedmassmatrix.jl")
+include("./inference/mcmc/adapters/mass/fullcovariancemassadapter.jl")
+include("./inference/mcmc/adapters/mass/rmspropmassadapter.jl")
+export MassAdapter 
+export DiagCovMassAdapter, FixedMassAdapter, FullCovMassAdapter, RMSPropMassAdapter
+# Stepsize Adapters
+include("./inference/mcmc/adapters/stepsize/abstract_stepsize.jl")
+include("./inference/mcmc/adapters/stepsize/constantstepsize.jl")
+include("./inference/mcmc/adapters/stepsize/dualaveragestepsize.jl")
+export StepsizeAdapter
+export ConstantStepsize, DualAveragingStepSize
+# MCMC Methods
 include("./inference/mcmc/sgld.jl")
 include("./inference/mcmc/ggmc.jl")
 include("./inference/mcmc/amh.jl")
-# include("./inference/vi/advi.jl")
-include("./inference/vi/bbb.jl")
+include("./inference/mcmc/hmc.jl")
 export MCMCState, mcmc
 export SGLD
 export GGMC
 export AdaptiveMH
-export MassAdapter, MassIdentityAdapter, MassRMSPropAdapter, MassVarianceAdapter
-export StepsizeAdapter, StepsizeConstantAdapter, StepsizeStochasticOptAdapter
+export HMC
+
+
+# Variational Inference Methods
+# include("./inference/vi/advi.jl")
+include("./inference/vi/bbb.jl")
 # export advi
 export bbb
 
