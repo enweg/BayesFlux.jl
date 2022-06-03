@@ -21,8 +21,10 @@ export SeqToOneNormal, SeqToOneTDist
 
 include("./netpriors/abstract.jl")
 include("./netpriors/gaussian.jl")
+include("./netpriors/mixturescale.jl")
 export NetworkPrior, sample_prior 
 export GaussianPrior
+export MixtureScalePrior
 
 include("./initialisers/abstract.jl")
 include("./initialisers/basics.jl")
