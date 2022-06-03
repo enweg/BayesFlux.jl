@@ -2,6 +2,7 @@ using BFlux
 using Flux
 using Distributions, Random, Bijectors
 using Test
+using LinearAlgebra
 
 # destructing Networks and layers
 include("./deconstruct.jl")
@@ -16,7 +17,8 @@ include("./bnn.jl")
 # Mode Finding
 include("./modes.jl")
 # MCMC
-include("./sgld.jl")
-include("./ggmc.jl")
+# include("./sgld.jl")
+# include("./ggmc.jl")
+include("./amh.jl")
 # vi
-include("./bbb.jl")
+# include("./bbb.jl")
