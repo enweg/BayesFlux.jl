@@ -54,13 +54,15 @@ export StepsizeAdapter
 export ConstantStepsize, DualAveragingStepSize
 # MCMC Methods
 include("./inference/mcmc/sgld.jl")
-include("inference/mcmc/sgnht.jl")
+include("./inference/mcmc/sgnht.jl")
+include("./inference/mcmc/sgnht-s.jl")
 include("./inference/mcmc/ggmc.jl")
 include("./inference/mcmc/amh.jl")
 include("./inference/mcmc/hmc.jl")
 export MCMCState, mcmc
 export SGLD
 export SGNHT
+export SGNHTS
 export GGMC
 export AdaptiveMH
 export HMC
