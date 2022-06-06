@@ -33,7 +33,7 @@ function (l::SeqToOneNormal{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet:
     return logpdf(MvNormal(zeros(n), I), (y-yhat)./sigma) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::SeqToOneNormal{T, F, D}, x::Arra{T, 3}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function predict(l::SeqToOneNormal{T, F, D}, x::Array{T, 3}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
 
     θnet = T.(θnet)
     θlike = T.(θlike)
