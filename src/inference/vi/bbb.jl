@@ -22,9 +22,32 @@ function ∇bbb(bnn::B, ψ::AbstractVector{T},
     return Zygote.gradient(ψ -> loss_bbb(bnn, ψ, x, y; num_batches = num_batches), ψ)[1]
 end
 
+"""
+    bbb(bnn::BNN, batchsize::Int, epochs::Int; 
+    mc_samples = 1, shuffle = true, partial = true, 
+    showprogress = true, opt = Flux.ADAM(), n_samples_convergence = 10)
+
+Use Bayes By Backprop to find Variational Approximation to BNN. 
+
+This was proposed in Blundell, C., Cornebise, J., Kavukcuoglu, K., & Wierstra,
+D. (2015, June). Weight uncertainty in neural network. In International
+conference on machine learning (pp. 1613-1622). PMLR.
+
+# Arguments
+- `bnn::BNN`: The Bayesian NN 
+- `batchsize::Int`: Batchsize 
+- `epochs::Int`: Epochs 
+- `mc_samples::Int`: Over how many gradients should be averaged?
+- `shuffle::Bool = true`: Should observations be shuffled after each epoch?
+- `partial::Bool = true`: Can the last batch be smaller than batchsize? 
+- `showprogress::Bool = true`: Show progress bar? 
+- `opt`: Must be an optimiser in the form of a Flux.Optimiser 
+- `n_samples_convergence::Int = 10`: After each epoch the loss is calculated and
+  kept track of using an average of `n_samples_convergence` samples. 
+"""
 function bbb(bnn::BNN, batchsize::Int, epochs::Int; 
     mc_samples = 1, shuffle = true, partial = true, 
-    showprogress = true, opt = Flux.ADAM())
+    showprogress = true, opt = Flux.ADAM(), n_samples_convergence = 10)
 
     T = eltype(bnn.like.nc.θ)
 
@@ -49,6 +72,7 @@ function bbb(bnn::BNN, batchsize::Int, epochs::Int;
     ∇ψ(ψ, x, y) = ∇bbb(bnn, ψ, x, y; num_batches = num_batches)
 
     ψs = Array{T}(undef, length(ψ), epochs)
+    losses = Array{T}(undef, epochs)
     
     gs = Array{T}(undef, length(ψ), mc_samples)
     for e=1:epochs
@@ -62,10 +86,11 @@ function bbb(bnn::BNN, batchsize::Int, epochs::Int;
             next!(prog)
         end
         ψs[:, e] = copy(ψ)
+        losses[e] = mean([loss_bbb(bnn, ψ, bnn.x, bnn.y) for _ in 1:n_samples_convergence])
     end
 
     n = bnn.num_total_params
     μ = ψ[1:n]
     σ = log1pexp.(ψ[(n+1):end])
-    return MvNormal(μ, σ), ψs
+    return MvNormal(μ, σ), ψs, losses
 end

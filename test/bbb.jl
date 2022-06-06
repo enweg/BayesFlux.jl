@@ -16,7 +16,7 @@ function test_BBB_regression(;k=5, n=100_000)
     init = InitialiseAllSame(Normal(0.0f0, 1.0f0), like, prior)
     bnn = BNN(x, y, like, prior, init)
 
-    q, params = bbb(bnn, 1000, 250; mc_samples = 1, opt = Flux.RMSProp())
+    q, params, losses = bbb(bnn, 1000, 250; mc_samples = 1, opt = Flux.RMSProp())
 
     μ = mean(q)
     test1 = maximum(abs, β - μ[1:length(β)]) < 0.05
