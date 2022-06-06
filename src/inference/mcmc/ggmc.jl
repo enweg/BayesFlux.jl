@@ -115,7 +115,7 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S
         s.lMH += loglikeprior(bnn, θ, bnn.x, bnn.y)
 
         s.l = s.sadapter(s, min(exp(s.lMH), 1))
-        s.Minv = s.madapter(s, θ, bnn, g) 
+        s.Minv = s.madapter(s, θ, bnn, ∇θ) 
         s.M = inv(s.Minv)
         s.Mhalf = cholesky(s.M; check = false).L
 
