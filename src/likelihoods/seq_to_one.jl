@@ -33,13 +33,13 @@ function (l::SeqToOneNormal{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet:
     return logpdf(MvNormal(zeros(n), I), (y-yhat)./sigma) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::SeqToOneNormal{T, F, D}, x::Vector{Matrix{T}}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function predict(l::SeqToOneNormal{T, F, D}, x::Array{T, 3}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
 
     θnet = T.(θnet)
     θlike = T.(θlike)
 
     net = l.nc(θnet)
-    yhat = vec([net(xx) for xx in x][end])
+    yhat = vec([net(xx) for xx in eachslice(x; dims = 1)][end])
     sigma = invlink(l.prior_σ, θlike[1])
 
     ypp = rand(MvNormal(yhat, sigma^2*I))
@@ -74,13 +74,13 @@ function (l::SeqToOneTDist{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet::
     return sum(logpdf.(TDist(l.ν), (y-yhat)./sigma)) - n*log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::SeqToOneTDist{T, F, D}, x::Vector{Matrix{T}}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function predict(l::SeqToOneTDist{T, F, D}, x::Array{T, 3}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
 
     net = l.nc(θnet)
-    yhat = vec([net(xx) for xx in x][end])
+    yhat = vec([net(xx) for xx in eachslice(x; dims = 1)][end])
     sigma = invlink(l.prior_σ, θlike[1])
     n = length(yhat)
 

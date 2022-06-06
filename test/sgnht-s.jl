@@ -15,10 +15,14 @@ function test_SGNHTS_regression(;k=5, n=100_000)
     init = InitialiseAllSame(Normal(0.0f0, 1.0f0), like, prior)
     bnn = BNN(x, y, like, prior, init)
 
-    l = 1f-3
-    sampl = SGNHTS(l, 6f0)
+    opt = FluxModeFinder(bnn, Flux.ADAM())
+    θmap = find_mode(bnn, 100, 300, opt)
 
-    ch = mcmc(bnn, 1000, 20_000, sampl; showprogress = false)
+    l = 1f-3
+    madapter = RMSPropMassAdapter(1000)
+    sampl = SGNHTS(l, 6f0; madapter = madapter)
+
+    ch = mcmc(bnn, 1000, 20_000, sampl; showprogress = false, θstart = θmap)
     ch_short = ch[:, end-9999:end]
 
     θmean = mean(ch_short; dims=2)
