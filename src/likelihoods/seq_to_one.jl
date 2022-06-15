@@ -18,12 +18,12 @@ function SeqToOneNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:D
     return SeqToOneNormal(1, nc, prior_σ)
 end
 
-function (l::SeqToOneNormal{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function (l::SeqToOneNormal{T, F, D})(x::Array{T, 3}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
     net = l.nc(θnet)
-    yhat = vec([net(xx) for xx in x][end])
+    yhat = vec([net(xx) for xx in eachsclice(x; dims = 1)][end])
     tdist = transformed(l.prior_σ)
     sigma = invlink(l.prior_σ, θlike[1])
     n = length(y)
@@ -61,12 +61,12 @@ function SeqToOneTDist(nc::NetConstructor{T, F}, prior_σ::D, ν::T) where {T, F
     return SeqToOneTDist(1, nc, prior_σ, ν)
 end
 
-function (l::SeqToOneTDist{T, F, D})(x::Vector{Matrix{T}}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function (l::SeqToOneTDist{T, F, D})(x::Array{T, 3} y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
     net = l.nc(θnet)
-    yhat = vec([net(xx) for xx in x][end])
+    yhat = vec([net(xx) for xx in eachsclice(x; dims = 2)][end])
     tdist = transformed(l.prior_σ)
     sigma = invlink(l.prior_σ, θlike[1])
     n = length(y)
