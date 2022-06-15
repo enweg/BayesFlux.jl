@@ -69,7 +69,7 @@ end
     
     @testset "Gaussian" for rnn in [RNN, LSTM]
 
-        net = Chain(rnn(10, 10), Dense(10, 1))
+        net = Chain(RNN(10, 10), Dense(10, 1))
         nc = destruct(net)
         gl = SeqToOneNormal(nc, Gamma(2.0, 2.0))
 
@@ -83,7 +83,8 @@ end
         # network likelihood to a standard normal 
         # We only need to subtract the contribution of the prior for σ
         y = T.(quantile.(Normal(), 0.1:0.1:0.9))
-        x = [randn(T, 10, length(y)) for _ in 1:10]
+        # x = [randn(T, 10, length(y)) for _ in 1:10]
+        x = randn(T, 10, 10, length(y))
         θ = zeros(eltype(nc.θ), nc.num_params_network)
 
         tdist = transformed(gl.prior_σ)
@@ -93,7 +94,8 @@ end
 
         # Similarly, using any x should result in predictions that are 
         # distributed according to a standard normal
-        x = [randn(T, 10, 100_000) for _ in 1:10]
+        # x = [randn(T, 10, 100_000) for _ in 1:10]
+        x = randn(T, 10, 10, 100_000)
         ypp = predict(gl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
