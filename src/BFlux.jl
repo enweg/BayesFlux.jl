@@ -74,6 +74,10 @@ include("./inference/vi/bbb.jl")
 # export advi
 export bbb
 
+# Utilities
+include("./utils/rnn_utils.jl")
+export make_rnn_tensor
+
 
 # include("./model/posterior.jl")
 # include("./optimise/modes.jl")
@@ -83,7 +87,6 @@ export bbb
 # include("./sampling/sgld.jl")
 # include("./sampling/ggmc.jl")
 # include("./simulations/AR.jl")
-# include("./utils/rnn_utils.jl")
 
 # ###### Exports
 # export posterior_predict
