@@ -89,7 +89,12 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S
 
     v, g = ∇θ(θ)
     g = -g
-    # g = clip_gradient_value!(g, T(15.0))
+    # We must use gradient clipping with GGMC. In all other cases it always
+    # seems to result in numerical problems.
+    # g = clip_gradient_value!(g, T(5.0))
+    ng = norm(g)
+    maxnorm = 5.0f0
+    g = ng > maxnorm ? maxnorm*g./ng : g
 
     h = sqrt(h)
     momentum = s.momentum
@@ -103,7 +108,13 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S
 
     v, g = ∇θ(θ)
     g = -g
-    # g = clip_gradient_value!(g, T(15.0))
+    # We must use gradient clipping with GGMC. In all other cases it always
+    # seems to result in numerical problems.
+    # g = clip_gradient_value!(g, T(5.0))
+    ng = norm(g)
+    maxnorm = 5.0f0
+    g = ng > maxnorm ? maxnorm*g./ng : g
+
     momentum34 = momentum12 - h/T(2)*g
     s.momentum = sqrt(a)*momentum34 + sqrt((1-a))*s.Mhalf*rand(Normal(T(0), T(1)), length(θ))
 
