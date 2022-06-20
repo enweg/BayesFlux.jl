@@ -1,5 +1,5 @@
-<!-- Create the .md file by running Literate.markdown("./README.jl", flavor =
-Literate.CommonMarkFlavor()) -->
+<!-- Create the .md file by running
+Literate.markdown("./README.jl", flavor = Literate.CommonMarkFlavor()) -->
 
 ````julia
 using BFlux, Flux
@@ -408,6 +408,27 @@ maximum(summarystats(chain_yhat)[:, :rhat])
 ----
 
 ````julia
+posterior_yhat = sample_posterior_predict(bnn, ch)
+t_q = 0.05:0.05:0.95
+o_q = get_observed_quantiles(y, posterior_yhat, t_q)
+plot(t_q, o_q, label = "Posterior Predictive", legend=:topleft,
+    xlab = "Target Quantile", ylab = "Observed Quantile")
+plot!(x->x, t_q, label = "Target")
+````
+
+## Variation Inference
+
+In some cases MCMC method either do not work well or even the methods above
+take too long. For these cases BFlux currently implements Bayes-By-Backprop
+(...); One shortcoming of the current implementation is that the variational
+family is constrained to a diagonal multivariate gaussian and thus any
+correlations between network parameters are set to zero. This can cause
+problems in some situations and plans exist to allow for more felxible
+covariance specifications.
+
+````julia
+q, params, losses = bbb(bnn, 10, 2_000; mc_samples = 1, opt = Flux.ADAM(), n_samples_convergence = 10)
+ch = rand(q, 20_000)
 posterior_yhat = sample_posterior_predict(bnn, ch)
 t_q = 0.05:0.05:0.95
 o_q = get_observed_quantiles(y, posterior_yhat, t_q)
