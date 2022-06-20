@@ -416,7 +416,7 @@ plot(t_q, o_q, label = "Posterior Predictive", legend=:topleft,
 plot!(x->x, t_q, label = "Target")
 ````
 
-## Variation Inference
+### Variation Inference
 
 In some cases MCMC method either do not work well or even the methods above
 take too long. For these cases BFlux currently implements Bayes-By-Backprop
