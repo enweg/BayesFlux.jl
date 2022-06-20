@@ -379,3 +379,60 @@ o_q = get_observed_quantiles(y, posterior_yhat, t_q)
 plot(t_q, o_q, label = "Posterior Predictive", legend=:topleft, 
     xlab = "Target Quantile", ylab = "Observed Quantile")
 plot!(x->x, t_q, label = "Target")
+
+# ## More complicated FNN 
+# 
+# What changes if I want to implement BNNs using more complicated Feedforward
+# structures than above? Nothing! Well, almost nothing. The only thing that
+# truly changes is the network you specify. All the rest could in theory stay
+# the same. As the network becomes more complicated, it might be worth it to
+# specify better priors or likelihoods though. Say, for example, we use the same
+# data as above (in reality we would not know that it is coming from a linear
+# model although it is always good practice to try simple models first), but
+# instead of using the above network structure corresponding to a linear model,
+# use the following: 
+
+net = Chain(Dense(k, k, relu), Dense(k, k, relu), Dense(k, 1))
+
+# We can then still use the same prior, likelihood, and initialiser. But we do
+# need to change the NetworkConstructor. 
+
+nc = destruct(net)
+like = FeedforwardNormal(nc, Gamma(2.0, 0.5))
+prior = GaussianPrior(nc, 0.5f0)
+init = InitialiseAllSame(Normal(0.0f0, 0.5f0), like, prior)
+bnn = BNN(x, y, like, prior, init)
+
+# The rest is the same as above. We can, for example, first find the MAP: 
+
+opt = FluxModeFinder(bnn, Flux.ADAM())  # We will use ADAM 
+θmap = find_mode(bnn, 10, 500, opt)  # batchsize 10 with 500 epochs
+
+# ----
+
+nethat = nc(θmap)
+yhat = vec(nethat(x))
+sqrt(mean(abs2, y .- yhat))
+
+# Or we can use any of the MCMC or VI method - SGNHTS is just one option:
+
+
+sampler = SGNHTS(1f-2, 1f0; xi = 1f0^2, μ = 10f0)
+ch = mcmc(bnn, 10, 50_000, sampler)
+ch = ch[:, end-20_000+1:end]
+chain = Chains(ch')
+
+# ----
+
+yhats = naive_prediction(bnn, ch)
+chain_yhat = Chains(yhats')
+maximum(summarystats(chain_yhat)[:, :rhat])
+
+# ----
+
+posterior_yhat = sample_posterior_predict(bnn, ch)
+t_q = 0.05:0.05:0.95
+o_q = get_observed_quantiles(y, posterior_yhat, t_q)
+plot(t_q, o_q, label = "Posterior Predictive", legend=:topleft, 
+    xlab = "Target Quantile", ylab = "Observed Quantile")
+plot!(x->x, t_q, label = "Target")
