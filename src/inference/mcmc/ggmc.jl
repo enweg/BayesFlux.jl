@@ -6,6 +6,29 @@ Gradient Guided Monte Carlo
 
 Proposed in Garriga-Alonso, A., & Fortuin, V. (2021). Exact langevin dynamics
 with stochastic gradients. arXiv preprint arXiv:2102.01691.
+
+# Fields 
+
+- `samples::Matrix`: Matrix containing the samples. If sampling stopped early,
+  then not all columns will actually correspond to samples. See `nsampled` to
+  check how many samples were actually taken
+- `nsampled::Int`: Number of samples taken. 
+- `t::Int`: Current time step
+- `accepted::Vector{Bool}`: If true, sample was accepted; If false, proposed
+  sample was rejected and previous sample was taken. 
+- `β::T`: See paper. 
+- `l::T`: Step-length; See paper.
+- `sadapter::StepsizeAdapter`: A StepsizeAdapter. Default is
+  `DualAveragingStepSize`
+- `M::AbstractMatrix`: Mass Matrix
+- `Mhalf::AbstractMatrix`: Lower triangual cholesky decomposition of `M`
+- `Minv::AbstractMatrix`: Inverse mass matrix.
+- `madapter::MassAdapter`: A MassAdapter
+- `momentum::AbstractVector`: Last momentum vector
+- `lMH::T`: log of Metropolis-Hastings ratio. 
+- `steps::Int`: Number of steps to take before calculating MH ratio. 
+- `current_step::Int`: Current step. 
+
 """
 mutable struct GGMC{T} <: MCMCState
     samples::Matrix{T}
