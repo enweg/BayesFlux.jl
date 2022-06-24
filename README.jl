@@ -624,7 +624,7 @@ end
 # `NetworkPrior` and for an example of a mixture scale prior check out the code
 # for `MixtureScalePrior`*.
 #
-# > :info: Note that the prior defined here is only for the network. All
+# > :bangbang: Note that the prior defined here is only for the network. All
 # > additional priors for parameters needed by the likelihood are handled in the
 # > likelihood. This might at first sound odd, but nicely splits network
 # > specific things for likelihood specific things and thus should make BFlux
