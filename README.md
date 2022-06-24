@@ -674,11 +674,7 @@ the destruct methos for `RNN` cells takes the following form:
 ````julia
 function destruct(cell::Flux.Recur{R}) where {R<:Flux.RNNCell}
     @unpack σ, Wi, Wh, b, state0 = cell.cell
-````
-
-θ = vcat(vec(Wi), vec(Wh), vec(b), vec(state0))
-
-````julia
+    # θ = vcat(vec(Wi), vec(Wh), vec(b), vec(state0))
     θ = vcat(vec(Wi), vec(Wh), vec(b))
     function re(θ::Vector{T}) where {T}
         s = 1
