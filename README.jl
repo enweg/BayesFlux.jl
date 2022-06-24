@@ -526,3 +526,94 @@ o_q = get_observed_quantiles(y, posterior_yhat, t_q)
 plot(t_q, o_q, label = "Posterior Predictive", legend=:topleft, 
     xlab = "Target Quantile", ylab = "Observed Quantile")
 plot!(x->x, t_q, label = "Target")
+
+# # Customising BFlux
+#
+# BFlux is coded in such a way that the user can easily extend many of the
+# funcitonalities. The following are the easiest to extend and we will cover
+# them below: 
+#
+# - Initialisers
+# - Layers
+# - Priors 
+# - Likelihoods 
+#
+# ## Customising Initialisers
+# 
+# Every Initialiser must be implemented as a callable type extending the
+# abstract type `BNNInitialiser`. As aready mentioned, it must be callable,
+# with the only (optional) argument being a random number generator. It must
+# return a tupe of vectors: `(θnet, θhyper, θlike)` where any of the latter two
+# vectors is allowed to be of length zero. *For more information read the
+# documentation of `BNNInitialiser`
+# 
+# **Example**: See the code for `InitialiseAllSame`
+#
+# ## Customising Layers 
+#
+# BFlux relies on the layers currently implemented in `Flux`. Thus, the first step
+# in implementing a new layer for BFlux is to implement a new layer for `Flux`.
+# Once that is done, one must also implement a destruct method. For example, for
+# the Dense layer this has the following form 
+ 
+function destruct(cell::Flux.Dense)
+    @unpack weight, bias, σ = cell
+    θ = vcat(vec(weight), vec(bias))
+    function re(θ::AbstractVector)
+        s = 1
+        pweight = length(weight)
+        new_weight = reshape(θ[s:s+pweight-1], size(weight))
+        s += pweight
+        pbias = length(bias)
+        new_bias = reshape(θ[s:s+pbias-1], size(bias))
+        return Flux.Dense(new_weight, new_bias, σ)
+    end
+    return θ, re
+end
+
+# The destruct method takes as input a cell with the type of the cell being the
+# newly implemented layer. It must return a vector containing all network
+# parameter that should be trained/inferred and a function that given a vector
+# of the right length can restruct the layer. **Note: Flux also implements a
+# general destructure and restructure method. In my experience, this often
+# caused problems in AD and thus until this is more stable, BFlux will stick
+# with this manual setup**. 
+#
+# Care must be taken when cells are recurrent. The actual layer is then not an
+# `RNNCell`, but rather the full recurrent version: `Flux.Recur{RNNCell}`. Thus,
+# the destruct methos for `RNN` cells takes the following form:
+
+function destruct(cell::Flux.Recur{R}) where {R<:Flux.RNNCell}
+    @unpack σ, Wi, Wh, b, state0 = cell.cell
+    # θ = vcat(vec(Wi), vec(Wh), vec(b), vec(state0))
+    θ = vcat(vec(Wi), vec(Wh), vec(b))
+    function re(θ::Vector{T}) where {T}
+        s = 1
+        pWi = length(Wi)
+        new_Wi = reshape(θ[s:s+pWi-1], size(Wi))
+        s += pWi
+        pWh = length(Wh)
+        new_Wh = reshape(θ[s:s+pWh-1], size(Wh))
+        s += pWh
+        pb = length(b)
+        new_b = reshape(θ[s:s+pb-1], size(b))
+        s += pb
+        # pstate0 = length(state0)
+        # new_state0 = reshape(θ[s:s+pstate0-1], size(state0))
+        new_state0 = zeros(T, size(state0)) 
+        return Flux.Recur(Flux.RNNCell(σ, new_Wi, new_Wh, new_b, new_state0))
+    end
+    return θ, re
+end
+
+# As can be seen from the commented out lines, we are currently not inferring
+# the initial state. While this would be great and could theoretically be done
+# in a Bayesian setting, it also often seems to cause bad mixing and other
+# difficulties in the inferential process. 
+
+#
+# ## Customising Priors
+# 
+# ## Customising Likelihoods
+# 
+
