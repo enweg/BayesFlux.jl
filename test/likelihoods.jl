@@ -113,7 +113,8 @@ end
 
         # We can do the same as for the Gaussian case. 
         y = T.(quantile.(TDist(tl.ν), 0.1:0.1:0.9))
-        x = [randn(T, 10, length(y)) for _ in 1:10]
+        # x = [randn(T, 10, length(y)) for _ in 1:10]
+        x = randn(T, 10, 10, length(y))
         θ = zeros(T, nc.num_params_network)
 
         tdist = transformed(tl.prior_σ)
@@ -122,7 +123,8 @@ end
         @test tl(x, y, θ, [tσ]) ≈ sum(logpdf.(TDist(tl.ν), y)) + logpdf(tdist, tσ)
 
         # And doing the same for prediction
-        x = [randn(T, 10, 100_000) for _ in 1:10]
+        # x = [randn(T, 10, 100_000) for _ in 1:10]
+        x = randn(T, 10, 10, 100_000)
         ypp = predict(tl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
