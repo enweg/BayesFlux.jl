@@ -691,12 +691,8 @@ function destruct(cell::Flux.Recur{R}) where {R<:Flux.RNNCell}
         pb = length(b)
         new_b = reshape(θ[s:s+pb-1], size(b))
         s += pb
-````
-
-pstate0 = length(state0)
-new_state0 = reshape(θ[s:s+pstate0-1], size(state0))
-
-````julia
+        # pstate0 = length(state0)
+        # new_state0 = reshape(θ[s:s+pstate0-1], size(state0))
         new_state0 = zeros(T, size(state0))
         return Flux.Recur(Flux.RNNCell(σ, new_Wi, new_Wh, new_b, new_state0))
     end
