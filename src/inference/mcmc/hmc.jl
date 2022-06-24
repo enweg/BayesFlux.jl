@@ -5,6 +5,14 @@ Standard Hamiltonian Monte Carlo (Hybrid Monte Carlo).
 
 Allows for the use of stochastic gradients, but the validity of doing so is not clear. 
 
+This is motivated by parts of the discussion in 
+Neal, R. M. (1996). Bayesian Learning for Neural Networks (Vol. 118). Springer
+New York. https://doi.org/10.1007/978-1-4612-0745-0
+
+Code was partially adapted from
+https://colindcarroll.com/2019/04/11/hamiltonian-monte-carlo-from-scratch/
+
+
 # Fields
 - `samples::Matrix`: Samples taken
 - `nsampled::Int`: Number of samples taken. Might be smaller than
