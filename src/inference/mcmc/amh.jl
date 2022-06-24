@@ -23,7 +23,9 @@ algorithm. Bernoulli, 223-242.
 
 # Notes 
 
-- Adaptive MH might not be suited if it is very costly to calculate the likelihood as this needs to be done for each sample on the full dataset. Plans exist to make this faster. 
+- Adaptive MH might not be suited if it is very costly to calculate the
+  likelihood as this needs to be done for each sample on the full dataset. Plans
+  exist to make this faster. 
 - Works best when started at a MAP estimate. 
 """
 mutable struct AdaptiveMH{T} <: MCMCState
@@ -37,6 +39,19 @@ mutable struct AdaptiveMH{T} <: MCMCState
     ϵ::T
     accepted::Vector{Bool}
 end
+
+"""
+    function AdaptiveMH(C0::Matrix{T}, t0::Int, sd::T, ϵ::T) where {T}
+
+Construct an Adaptive MH sampler. 
+
+# Arguments 
+
+- `C0`: Initial covariance matrix. Can usually be chosen to be the identity matrix created using `diagm(ones(T, bnn.num_total_params))`
+- `t0`: Lookback window for adaptation of covariance matrix. Also means that adaptation does not happen until at least `t0` samples were drawn.
+- `sd`: See paper. 
+- `ϵ`: Used to overcome numerical problems. 
+"""
 function AdaptiveMH(C0::Matrix{T}, t0::Int, sd::T, ϵ::T) where {T}
     return AdaptiveMH(Matrix{T}(undef, 1, 1), 0, C0, similar(C0), 1, t0, sd, ϵ, Bool[])
 end
