@@ -1,10 +1,31 @@
-# Adaptive MH algorithm 
-# Haario, H., Saksman, E., & Tamminen, J. (2001). An adaptive Metropolis
-# algorithm. Bernoulli, 223-242.
-# 
-# Not suited for large datasets as MH must be calculated each iteration. Can
-# still be fast though since no gradients need to be taken
+"""
+Adaptive Metropolis Hastings as introduced in 
 
+Haario, H., Saksman, E., & Tamminen, J. (2001). An adaptive Metropolis
+algorithm. Bernoulli, 223-242.
+
+# Fields
+
+- `samples::Matix`: Matrix holding the samples. If sampling was stopped early,
+  not all columns will represent samples. To figure out how many columns
+  represent samples, check out `nsampled`.
+- `nsampled::Int`: Number of samples obtained.
+- `C0::Matrix`: Initial covariance matrix. 
+- `Ct::Matrix`: Covariance matrix in iteration t 
+- `t::Int`: Current time period
+- `t0::Int`: When to start adaptig the covariance matrix? Covariance is adapted
+  in a rolling window form. 
+- `sd::T`: See the paper. 
+- `ϵ::T`: Will be added to diagonal to prevent numerical non-pod-def problems.
+  If you run into numerical problems, try increasing this values.
+- `accepted::Vector{Bool}`: For each sample, indicating whether the sample was
+  accepted (true) or the previous samples was chosen (false)
+
+# Notes 
+
+- Adaptive MH might not be suited if it is very costly to calculate the likelihood as this needs to be done for each sample on the full dataset. Plans exist to make this faster. 
+- Works best when started at a MAP estimate. 
+"""
 mutable struct AdaptiveMH{T} <: MCMCState
     samples::Matrix{T}
     nsampled::Int
