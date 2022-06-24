@@ -716,10 +716,35 @@ for `MixtureScalePrior`*.
 > :bangbang: Note that the prior defined here is only for the network. All
 > additional priors for parameters needed by the likelihood are handled in the
 > likelihood. This might at first sound odd, but nicely splits network
-> specific things for likelihood specific things and thus should make BFlux
+> specific things from likelihood specific things and thus should make BFlux
 > more flexible.
 
 ## Customising Likelihoods
+
+Likelihoods are implemented as types extending the abstract type
+`BNNLikelihood` and thus can be extended by implementing a new subtype.
+Traditionally likelihood truly only refer to the likelihood. We decided to go
+a somewhat unconventional way and decided to design BFlux in a way that
+likelihood types also include the prior for all parameters they introduce.
+This was done so that the network specification with priors and all is
+separate from the likelihood specification. As such, these two parts can be
+freely changed without changing any of the other?
+
+**Example**: Say we would like to implement a simple Gaussian likelihood for a
+Feedforward structure (this is already implemented). Unless we predifine the
+standard deviation of the
+Gaussian, we will also estimate it, and thus we need a prior for it. While in
+the traditional setting this would be covered in the prior type, here it is
+covered in the likelihood type. Thus, the version as implemented in BFlux
+takes upon construction also a prior distribution that shall be used for the
+standard deviation. This prior does not have to have as its domain the real
+line. It can also be constrained, such as a Gamma distribution, as long as the
+code of the likelihood type makes sure to appropriately transform the
+distribution to the real line. In the already implemented version this is done
+using `Bijectors.jl`.
+
+The documentation for `BNNLikelihood` gives details about what exactly need to
+be implemented.
 
 ---
 
