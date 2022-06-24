@@ -11,6 +11,21 @@ stepsize schedule that meets the criteria ∑ϵₜ = ∞, ∑ϵₜ² < ∞.
 """
 stepsize(a, b, γ, t) = a*(b+t)^(-γ)
 
+"""
+Stochastic Gradient Langevin Dynamics as proposed in Welling, M., & Teh, Y. W.
+(n.d.). Bayesian Learning via Stochastic Gradient Langevin Dynamics. 8.
+
+# Fields
+
+-  `θ::AbstractVector`: Current sample
+- `samples::Matrix`: Matrix of samples. Not all columns will be actual samples if sampling was stopped early. See `nsampled` for the actual number of samples taken. 
+- `nsampled::Int`: Number of samples taken
+- `min_stepsize::T`: Stop decreasing the stepsize when it is below this value. 
+- `didinform::Bool`: Flag keeping track of whether we informed user that `min_stepsize` was reached. 
+- `stepsize_a::T`: See `stepsize`
+- `stepsize_b::T`: See `stepsize`
+- `stepsize_γ::T`: See `stepsize`
+"""
 mutable struct SGLD{T}<:MCMCState 
     θ::AbstractVector{T}
     samples::Matrix{T}
