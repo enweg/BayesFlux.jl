@@ -8,9 +8,9 @@ using LinearAlgebra
 include("./deconstruct.jl")
 # # likelihoods
 include("./likelihoods.jl")
-# # network priors
+# network priors
 include("./networkpriors.jl")
-initialisers 
+# initialisers 
 include("./initialisers.jl")
 # BNN basic operations
 include("./bnn.jl")

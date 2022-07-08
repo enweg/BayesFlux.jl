@@ -27,7 +27,7 @@
         end
    end
 
-    @testset "Mixture Gaussian" for (μ1, σ1, σ2) in zip([0.01f0, 0.1f0, 0.5f0, 0.9f0], [0.001f0, 0.1f0, 1.0f0], [1.0f0, 10.f0, 100.0f0]) 
+    @testset "Mixture Gaussian" for (μ1, σ1, σ2) in zip([0.01f0, 0.1f0, 0.5f0, 0.9f0], [0.001f0, 0.1f0, 1.0f0], [1.0f0, 5.0f0, 10.0f0]) 
         @testset "Mixture Gaussian μ1=$μ1, σ1=$σ1, σ2=$σ2" begin
             net = Chain(Dense(10, 10, sigmoid), Dense(10, 1))
             nc = destruct(net)
