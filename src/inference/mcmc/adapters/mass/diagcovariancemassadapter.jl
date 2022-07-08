@@ -1,6 +1,6 @@
 """
 Use the variances as the diagonal of the inverse mass matrix as used in hmc, 
-ggmc, ... For a complete version of this see `DiagCovMassAdapter`.
+ggmc, ...; 
 
 # Fields
 - `Minv`: Inverse mass matrix as used in HMC, SGLD, GGMC, ...
