@@ -1,0 +1,6 @@
+# Initialisation
+
+```@docs
+BNNInitialiser
+InitialiseAllSame
+```

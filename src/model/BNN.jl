@@ -15,7 +15,21 @@ struct BNN{Tx, Ty, L, P, I}
     num_total_params::Int
 end
 
-function BNN(x, y, like, prior, init)
+"""
+    BNN(x, y, like::BNNLikelihood, prior::NetworkPrior, init::BNNInitialiser)
+
+Create a Bayesian Neural Network. 
+
+# Arguments
+
+- `x`: Explanatory data
+- `y`: Dependent variables
+- `like`: A likelihood
+- `prior`: A prior on network parameters
+- `init`: An initilialiser
+
+"""
+function BNN(x, y, like::BNNLikelihood, prior::NetworkPrior, init::BNNInitialiser)
     start_θnet = 1
     start_θhyper = start_θnet + like.nc.num_params_network
     start_θlike = prior.num_params_hyper == 0 ? start_θhyper : start_θhyper + prior.num_params_hyper - 1
@@ -30,6 +44,9 @@ function split_params(bnn::B, θ::Vector{T}) where {B<:BNN, T}
     return θnet, θhyper, θlike
 end
 
+"""
+Obtain the log of the unnormalised posterior.
+"""
 function loglikeprior(bnn::B, θ::Vector{T}, 
     x::Union{Vector{Matrix{T}}, Matrix{T}, Array{T, 3}}, 
     y::Union{Vector{T}, Matrix{T}}; num_batches = T(1)) where {B<:BNN, T}
@@ -38,6 +55,9 @@ function loglikeprior(bnn::B, θ::Vector{T},
     return num_batches*bnn.like(x, y, θnet, θlike) + bnn.prior(θnet, θhyper)
 end
 
+"""
+Obtain the derivative of the unnormalised log posterior.
+"""
 function ∇loglikeprior(bnn::B, θ::Vector{T}, 
     x::Union{Vector{Matrix{T}}, Matrix{T}, Array{T, 3}}, 
     y::Union{Vector{T}, Matrix{T}}; num_batches = T(1)) where {B<:BNN, T}
@@ -57,6 +77,8 @@ function clip_gradient_value!(g, maxval=15)
 end
 
 """
+    sample_prior_predictive(bnn::BNN, predict::Function, n::Int = 1;
+
 Samples from the prior predictive. 
 
 # Arguments
@@ -80,6 +102,8 @@ function sample_prior_predictive(bnn::BNN, predict::Function, n::Int = 1;
 end
 
 """
+    get_posterior_networks(bnn::BNN, ch::AbstractMatrix{T}) where {T}
+
 Get the networks corresponding to posterior draws.
 
 # Arguments
@@ -91,6 +115,18 @@ function get_posterior_networks(bnn::BNN, ch::AbstractMatrix{T}) where {T}
     return nets
 end
 
+"""
+    sample_posterior_predict(bnn::BNN, ch::AbstractMatrix{T}; x = bnn.x)
+
+Sample from the posterior predictive distribution. 
+
+# Arguments 
+
+- `bnn`: a Bayesian Neural Network 
+- `ch`: draws from the posterior. These should be either obtained using [`mcmc`](@ref) or [`bbb`](@ref) 
+- `x`: explanatory variables. Default is to use the training data.
+
+"""
 function sample_posterior_predict(bnn::BNN, ch::AbstractMatrix{T}; x = bnn.x) where {T}
     θnets = [T.(split_params(bnn, ch[:, i])[1]) for i=1:size(ch, 2)]
     θlikes = [T.(split_params(bnn, ch[:, i])[3]) for i=1:size(ch, 2)]

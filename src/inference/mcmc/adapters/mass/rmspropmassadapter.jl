@@ -1,8 +1,10 @@
 """
-Use RMSProp as a preconditions/mass matrix adapter. This was proposed in Li, C.,
-Chen, C., Carlson, D., & Carin, L. (2016, February). Preconditioned stochastic
-gradient Langevin dynamics for deep neural networks. In Thirtieth AAAI
-Conference on Artificial Intelligence for the use in SGLD and related methods. 
+Use RMSProp as a preconditions/mass matrix adapter. This was proposed in 
+
+Li, C., Chen, C., Carlson, D., & Carin, L. (2016, February). Preconditioned
+stochastic gradient Langevin dynamics for deep neural networks. In Thirtieth
+AAAI Conference on Artificial Intelligence for the use in SGLD and related
+methods. 
 """
 mutable struct RMSPropMassAdapter <: MassAdapter
     Minv::AbstractMatrix

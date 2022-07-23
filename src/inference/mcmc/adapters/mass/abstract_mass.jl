@@ -4,8 +4,6 @@
  Adapt the mass matrix in MCMC and especially dynamic MCMCM methods such as 
  HMC, GGMC, SGLD, SGNHT, ...
 
- # Implementation Details
-
  ## Mandatory Fields
  - `Minv::AbstractMatrix`: The inverse mass matrix used in HMC, GGMC, ...
 

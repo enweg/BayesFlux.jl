@@ -1,6 +1,7 @@
 # Use Flux to find modes
 
 """
+FluxModeFinder(bnn::BNN, opt::O; windowlength = 100, ϵ = 1e-6) where {O<:Flux.Optimise.AbstractOptimiser}
 
 Use one of Flux optimisers to find the mode. Keep track of changes in θ over a window 
 of `windowlegnth` and report convergence if the maximum change over the current window is 

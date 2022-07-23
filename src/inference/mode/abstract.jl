@@ -2,9 +2,6 @@ using Flux
 using ProgressMeter
 
 """
-    function find_mode(bnn::BNN, batchsize::Int, epochs::Int, optimiser::BNNModeFinder; 
-        shuffle = true, partial = true, showprogress = true)
-
 Find the mode of a BNN. 
 
 Find the mode of a BNN using `optimiser`. Each `optimiser` must have implemented 
@@ -17,6 +14,11 @@ abstract type BNNModeFinder end
 
 step!(mf::BNNModeFinder, θ::AbstractVector, ∇θ::Function) = error("$(typeof(mf)) has not implemented the step! function. Please see the documentation for BNNModeFinder")
 
+"""
+    find_mode(bnn, batchsize, epochs, optimiser)
+
+Find the mode of a BNN.
+"""
 function find_mode(bnn::BNN, batchsize::Int, epochs::Int, optimiser::BNNModeFinder; 
     shuffle = true, partial = true, showprogress = true)
 

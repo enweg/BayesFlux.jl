@@ -3,6 +3,8 @@ using StatsBase
 using LinearAlgebra
 
 """
+    MixtureScalePrior(nc::NetConstructor{T, F}, σ1::T, σ2::T, μ1::T)
+
 Scale mixture of Gaussians
 
 # Fields

@@ -1,0 +1,5 @@
+# Gaussian Prior
+
+```@docs
+GaussianPrior
+```

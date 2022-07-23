@@ -1,6 +1,8 @@
 
 
 """
+    InitialiseAllSame(dist::D, like::BNNLikelihood, prior::NetworkPrior)
+
 Initialise all values by drawing from `dist`
 """
 struct InitialiseAllSame{D<:Distribution} <: BNNInitialiser

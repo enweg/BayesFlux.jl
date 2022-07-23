@@ -8,6 +8,16 @@ struct GaussianPrior{T, F} <: NetworkPrior
     nc::NetConstructor{T, F}
     σ0::T
 end
+"""
+
+Use a Gaussian prior for all network parameters. This means that we do not allow
+for any correlations in the network parameters in the prior. 
+
+# Arguments
+
+- `nc`: obtained using [`destruct`](@ref)
+- `σ0`: standard deviation of prior
+"""
 function GaussianPrior(nc::NetConstructor{T, F}, σ0::T = T(1.0)) where {T, F}
     return GaussianPrior(0, nc, σ0)
 end

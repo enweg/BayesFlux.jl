@@ -24,8 +24,8 @@ end
 
 """
     bbb(bnn::BNN, batchsize::Int, epochs::Int; 
-    mc_samples = 1, shuffle = true, partial = true, 
-    showprogress = true, opt = Flux.ADAM(), n_samples_convergence = 10)
+        mc_samples = 1, shuffle = true, partial = true, 
+        showprogress = true, opt = Flux.ADAM(), n_samples_convergence = 10)
 
 Use Bayes By Backprop to find Variational Approximation to BNN. 
 

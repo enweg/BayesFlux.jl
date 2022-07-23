@@ -9,6 +9,19 @@ using LinearAlgebra
 ################################################################################
 
 
+"""
+    SeqToOneNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:Distribution}
+
+Use a Gaussian/Normal likelihood for a Seq-to-One architecture with a single output.
+
+Assumes is a single output. Thus, the last layer must have output size one. 
+
+# Arguments
+
+- `nc`: obtained using [`destruct`](@ref)
+- `prior_σ`: a prior distribution for the standard deviation
+
+"""
 struct SeqToOneNormal{T, F, D<:Distribution} <: BNNLikelihood
     num_params_like::Int
     nc::NetConstructor{T, F}
@@ -51,6 +64,21 @@ end
 # Sequence to one TDIST
 ################################################################################
 
+"""
+    SeqToOneTDist(nc::NetConstructor{T, F}, prior_σ::D, ν::T) where {T, F, D}
+
+Use a Student-T likelihood for a Seq-to-One architecture with a single output
+and known degress of freedom.
+
+Assumes is a single output. Thus, the last layer must have output size one. 
+
+# Arguments
+
+- `nc`: obtained using [`destruct`](@ref)
+- `prior_σ`: a prior distribution for the standard deviation
+- `ν`: degrees of freedom
+
+"""
 struct SeqToOneTDist{T, F, D<:Distribution} <: BNNLikelihood
     num_params_like::Int
     nc::NetConstructor{T, F}

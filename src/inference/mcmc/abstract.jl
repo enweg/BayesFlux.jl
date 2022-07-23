@@ -31,6 +31,29 @@ calculate_epochs(sampler::MCMCState, nbatches, nsamples; continue_sampling = fal
 
 update!(sampler::MCMCState, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T} = error("$(typeof(sampler)) has not implemented an update! method. Please consult the documentation for MCMCState")
 
+"""
+    mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState; 
+        shuffle = true, partial = true, showprogress = true, continue_sampling = false, 
+        θstart::AbstractVector{T} = vcat(bnn.init()...))
+
+Sample from a BNN using MCMC
+
+# Arguments 
+
+- `bnn`: a Bayesian Neural Network
+- `batchsize`: batchsize
+- `numsamples`: number of samples to take
+- `sampler`: sampler to use 
+- `shuffle`: should data be shuffled after each epoch such that batches are
+  different in each epoch? 
+- `partial`: are partial batches allowed? If true, some batches might be smaller
+  than `batchsize`
+- `showprogress`: should a progress bar be shown? 
+- `continue_sampling`: If true and `numsamples` is larger than
+  `sampler.nsampled` then additional samples will be taken 
+- `θstart`: starting parameter vector
+
+"""
 function mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState; 
     shuffle = true, partial = true, showprogress = true, continue_sampling = false, 
     θstart::AbstractVector{T} = vcat(bnn.init()...)) where {T}
