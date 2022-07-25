@@ -8,7 +8,12 @@ makedocs(
         prettyurls = get(ENV, "CI", nothing) == "true"
     ),
     pages = [
-        "index.md", 
+        "Introduction" => [
+            "index.md", 
+            "introduction/linear-regression.md", 
+            "introduction/feedforward.md", 
+            "introduction/recurrent.md"
+        ],
         "Bayesian Neural Networks" => [
             "model/bnn.md", 
             "model/sampling.md"
