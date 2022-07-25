@@ -1,6 +1,8 @@
 <!-- Create the .md file by running
 Literate.markdown("./README.jl", flavor = Literate.CommonMarkFlavor()) -->
 
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://enweg.github.io/BFlux.jl/dev)
+
 ````julia
 using BFlux, Flux
 using Random, Distributions
