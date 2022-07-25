@@ -1,7 +1,7 @@
 name = "BFlux"
 uuid = "c2416e8a-86ea-414a-9a91-c37c770c1547"
 authors = ["Enrico Wegner <wegner1996@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 AdvancedHMC = "0bf59076-c3b1-5ca4-86bd-e02cd72cde3d"
