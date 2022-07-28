@@ -94,7 +94,7 @@ function (l::SeqToOneTDist{T, F, D})(x::Array{T, 3}, y::Vector{T}, θnet::Abstra
     θlike = T.(θlike)
 
     net = l.nc(θnet)
-    yhat = vec([net(xx) for xx in eachslice(x; dims = 2)][end])
+    yhat = vec([net(xx) for xx in eachslice(x; dims = 1)][end])
     tdist = transformed(l.prior_σ)
     sigma = invlink(l.prior_σ, θlike[1])
     n = length(y)
