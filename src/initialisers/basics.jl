@@ -5,7 +5,7 @@
 
 Initialise all values by drawing from `dist`
 """
-struct InitialiseAllSame{D<:Distribution} <: BNNInitialiser
+struct InitialiseAllSame{D<:Distributions.Distribution} <: BNNInitialiser
     length_θnet::Int
     length_hyper::Int
     length_like::Int

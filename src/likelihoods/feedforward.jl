@@ -22,12 +22,12 @@ Assumes is a single output. Thus, the last layer must have output size one.
 - `prior_σ`: a prior distribution for the standard deviation
 
 """
-struct FeedforwardNormal{T, F, D<:Distribution} <: BNNLikelihood
+struct FeedforwardNormal{T, F, D<:Distributions.Distribution} <: BNNLikelihood
     num_params_like::Int
     nc::NetConstructor{T, F}
     prior_σ::D
 end
-function FeedforwardNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:Distribution}
+function FeedforwardNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:Distributions.Distribution}
     return FeedforwardNormal(1, nc, prior_σ)
 end
 
@@ -77,7 +77,7 @@ Assumes is a single output. Thus, the last layer must have output size one.
 - `ν`: degrees of freedom
 
 """
-struct FeedforwardTDist{T, F, D<:Distribution} <: BNNLikelihood
+struct FeedforwardTDist{T, F, D<:Distributions.Distribution} <: BNNLikelihood
     num_params_like::Int
     nc::NetConstructor{T, F}
     prior_σ::D
