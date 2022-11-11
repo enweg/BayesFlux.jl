@@ -3,7 +3,7 @@ using BFlux
 using Flux, Distributions, Random
 using LinearAlgebra
 
-function test_HMC_regression(madapter; k=5, n=100_000)
+function test_HMC_regression(madapter; k=5, n=10_000)
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x' * β + 1.0f0 * randn(Float32, n)
@@ -34,7 +34,7 @@ function test_HMC_regression(madapter; k=5, n=100_000)
     # Commented below was also tested and always worked. But good practice 
     # for BNNs is to have a warm start.
     # ch = mcmc(bnn, 1000, 20_000, sampler; showprogress = true)
-    ch = mcmc(bnn, 1000, 20_000, sampler; showprogress=false, θstart=θmap)
+    ch = mcmc(bnn, 1000, 20_000, sampler; showprogress=true, θstart=θmap)
     ch_short = ch[:, end-9999:end]
 
     θmean = mean(ch_short; dims=2)
@@ -55,6 +55,7 @@ function test_HMC_regression(madapter; k=5, n=100_000)
 end
 
 
+Random.seed!(6150533)
 @testset "HMC" begin
     madapter1 = DiagCovMassAdapter(1000, 100; kappa=0.1f0)
     madapter2 = FullCovMassAdapter(1000, 100; kappa=0.1f0)
