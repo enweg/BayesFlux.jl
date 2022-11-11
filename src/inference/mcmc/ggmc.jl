@@ -12,7 +12,7 @@ with stochastic gradients. arXiv preprint arXiv:2102.01691.
   then not all columns will actually correspond to samples. See `nsampled` to
   check how many samples were actually taken
 - `nsampled::Int`: Number of samples taken. 
-- `t::Int`: Current time step
+- `t::Int`: Total number of steps taken.
 - `accepted::Vector{Bool}`: If true, sample was accepted; If false, proposed
   sample was rejected and previous sample was taken. 
 - `β::T`: See paper. 
@@ -26,7 +26,7 @@ with stochastic gradients. arXiv preprint arXiv:2102.01691.
 - `momentum::AbstractVector`: Last momentum vector
 - `lMH::T`: log of Metropolis-Hastings ratio. 
 - `steps::Int`: Number of steps to take before calculating MH ratio. 
-- `current_step::Int`: Current step. 
+- `current_step::Int`: Current step in the recurrent sequence 1, ..., `steps`. 
 
 """
 mutable struct GGMC{T} <: MCMCState
@@ -107,6 +107,7 @@ function initialise!(
     s.t = t
     s.nsampled = nsampled
     s.accepted = accepted
+    s.current_step = 1
 
     n = length(θ)
     if !continue_sampling

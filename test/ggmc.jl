@@ -2,7 +2,7 @@ using BFlux
 using Flux, Distributions, Random
 using Test
 
-function test_GGMC_regression(steps, k=5, n=100_000)
+function test_GGMC_regression(steps, k=5, n=10_000)
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x' * β + 1.0f0 * randn(Float32, n)
@@ -19,15 +19,20 @@ function test_GGMC_regression(steps, k=5, n=100_000)
     opt = FluxModeFinder(bnn, Flux.RMSProp(); windowlength=50)
     θmode = find_mode(bnn, 1000, 100, opt; showprogress=false)
 
-    # l = 1f-8
-    l = 1.0f-15
-    sadapter = DualAveragingStepSize(l; adapt_steps=1000)
+    l = 1f-2
+    # l = 1.0f-15
+    sadapter = DualAveragingStepSize(l; adapt_steps=1000, target_accept=0.25f0)
     madapter = DiagCovMassAdapter(1000, 100, kappa=0.1f0, epsilon=1.0f-8)
 
-    sampler = GGMC(; l=l, β=0.1f0, steps=steps,
-        sadapter=sadapter, madapter=madapter)
+    sampler = GGMC(; 
+        l=l, 
+        β=0.1f0,
+        steps=steps,
+        sadapter=sadapter, 
+        madapter=madapter
+    )
 
-    ch = mcmc(bnn, 1_000, 20_000, sampler; showprogress=false, θstart=copy(θmode))
+    ch = mcmc(bnn, 1_000, 20_000, sampler; showprogress=true, θstart=copy(θmode))
     ch_short = ch[:, end-9999:end]
 
     θmean = mean(ch_short; dims=2)
@@ -47,7 +52,7 @@ function test_GGMC_regression(steps, k=5, n=100_000)
 end
 
 
-
+Random.seed!(6150533)
 @testset "GGMC" begin
     # Only testing up until 3 steps. Everything higher becomes numerically 
     # instable for any reasonably stepsizes
