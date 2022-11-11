@@ -3,7 +3,7 @@ using BFlux
 using Flux, Distributions, Random
 using ReTest
 
-function test_SGLD_regression(; k=5, n=100_000)
+function test_SGLD_regression(; k=5, n=10_000)
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x' * β + 1.0f0 * randn(Float32, n)
@@ -17,7 +17,7 @@ function test_SGLD_regression(; k=5, n=100_000)
     bnn = BNN(x, y, like, prior, init)
 
     sampler = SGLD(; stepsize_a=1.0f0)
-    ch = mcmc(bnn, 1000, 20_000, sampler; showprogress=false)
+    ch = mcmc(bnn, 1000, 20_000, sampler; showprogress=true)
     ch_short = ch[:, end-9999:end]
 
     θmean = mean(ch_short; dims=2)
@@ -37,7 +37,7 @@ function test_SGLD_regression(; k=5, n=100_000)
     return [test1, test2, test3, test4, test5]
 end
 
-
+Random.seed!(6150533)
 @testset "SGLD" begin
     @testset "Linear Regression" begin
         ntests = 10
