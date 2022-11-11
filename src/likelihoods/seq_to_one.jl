@@ -1,6 +1,3 @@
-################################################################################
-# Likelihood implementation are documented in implementation-likelihood.md
-################################################################################
 using Distributions
 using LinearAlgebra
 

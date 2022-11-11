@@ -39,11 +39,35 @@ mutable struct SGLD{T} <: MCMCState
     stepsize_γ::T
 
 end
-function SGLD(type=Float32; stepsize_a=0.1f0, stepsize_b=1.0f0, stepsize_γ=0.55f0, min_stepsize=Float32(-Inf))
-    return SGLD(type[], Matrix{type}(undef, 1, 1), 0, 1, min_stepsize, false, stepsize_a, stepsize_b, stepsize_γ)
+
+function SGLD(
+    type=Float32; 
+    stepsize_a=0.1f0, 
+    stepsize_b=1.0f0, 
+    stepsize_γ=0.55f0, 
+    min_stepsize=Float32(-Inf)
+)
+    return SGLD(
+        type[], 
+        Matrix{type}(undef, 1, 1), 
+        0, 
+        1, 
+        min_stepsize, 
+        false, 
+        stepsize_a, 
+        stepsize_b, 
+        stepsize_γ
+    )
+
 end
 
-function initialise!(s::SGLD{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling=false) where {T}
+function initialise!(
+    s::SGLD{T}, 
+    θ::AbstractVector{T}, 
+    nsamples::Int;
+    continue_sampling=false
+) where {T}
+
     samples = Matrix{T}(undef, length(θ), nsamples)
     if continue_sampling
         samples[:, 1:s.nsampled] = s.samples[:, 1:s.nsampled]

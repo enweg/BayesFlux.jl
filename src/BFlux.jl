@@ -79,22 +79,4 @@ export bbb
 include("./utils/rnn_utils.jl")
 export make_rnn_tensor
 
-
-# include("./model/posterior.jl")
-# include("./optimise/modes.jl")
-# include("./sampling/laplace.jl")
-# include("./sampling/advi.jl")
-# include("./sampling/bbb.jl")
-# include("./sampling/sgld.jl")
-# include("./sampling/ggmc.jl")
-# include("./simulations/AR.jl")
-
-# ###### Exports
-# export posterior_predict
-# export lp, reconstruct_sample
-# export find_mode, find_mode_sgd
-# export laplace, SIR_laplace
-# export advi, bbb
-# export sgld, ggmc
-
 end # module

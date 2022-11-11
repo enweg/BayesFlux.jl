@@ -1,4 +1,3 @@
-
 using StatsFuns
 using Random, Distributions
 using ProgressMeter
@@ -23,9 +22,7 @@ function ∇bbb(bnn::B, ψ::AbstractVector{T},
 end
 
 """
-    bbb(bnn::BNN, batchsize::Int, epochs::Int; 
-        mc_samples = 1, shuffle = true, partial = true, 
-        showprogress = true, opt = Flux.ADAM(), n_samples_convergence = 10)
+    bbb(args...; kwargs...)
 
 Use Bayes By Backprop to find Variational Approximation to BNN. 
 
@@ -37,17 +34,28 @@ conference on machine learning (pp. 1613-1622). PMLR.
 - `bnn::BNN`: The Bayesian NN 
 - `batchsize::Int`: Batchsize 
 - `epochs::Int`: Epochs 
-- `mc_samples::Int`: Over how many gradients should be averaged?
-- `shuffle::Bool = true`: Should observations be shuffled after each epoch?
-- `partial::Bool = true`: Can the last batch be smaller than batchsize? 
-- `showprogress::Bool = true`: Show progress bar? 
-- `opt`: Must be an optimiser in the form of a Flux.Optimiser 
-- `n_samples_convergence::Int = 10`: After each epoch the loss is calculated and
+
+# Keyword Arguments
+
+- `mc_samples::Int=1`: Over how many gradients should be averaged?
+- `shuffle::Bool=true`: Should observations be shuffled after each epoch?
+- `partial::Bool=true`: Can the last batch be smaller than batchsize? 
+- `showprogress::Bool=true`: Show progress bar? 
+- `opt=Flux.ADAM()`: Must be an optimiser of type Flux.Optimiser 
+- `n_samples_convergence::Int=10`: After each epoch the loss is calculated and
   kept track of using an average of `n_samples_convergence` samples. 
 """
-function bbb(bnn::BNN, batchsize::Int, epochs::Int;
-    mc_samples=1, shuffle=true, partial=true,
-    showprogress=true, opt=Flux.ADAM(), n_samples_convergence=10)
+function bbb(
+    bnn::BNN, 
+    batchsize::Int, 
+    epochs::Int;
+    mc_samples=1, 
+    shuffle=true, 
+    partial=true,
+    showprogress=true, 
+    opt=Flux.ADAM(), 
+    n_samples_convergence=10
+)
 
     T = eltype(bnn.like.nc.θ)
 

@@ -51,15 +51,25 @@ mutable struct HMC{T} <: MCMCState
     madapter::MassAdapter
     Minv::AbstractMatrix{T}
 end
-function HMC(l::T, path_len::Int;
+
+function HMC(
+    l::T, 
+    path_len::Int;
     sadapter=DualAveragingStepSize(l),
-    madapter=FullCovMassAdapter(1000, 100)) where {T}
+    madapter=FullCovMassAdapter(1000, 100)
+) where {T}
 
     return HMC(Matrix{T}(undef, 1, 1), 0, T[], T[], T[], 1, path_len, 1, Bool[],
         sadapter, l, madapter, Matrix{T}(undef, 0, 0))
 end
 
-function initialise!(s::HMC{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling=false) where {T}
+function initialise!(
+    s::HMC{T}, 
+    θ::AbstractVector{T}, 
+    nsamples::Int; 
+    continue_sampling=false
+) where {T}
+
     samples = Matrix{T}(undef, length(θ), nsamples)
     accepted = fill(false, nsamples)
     if continue_sampling
@@ -91,6 +101,7 @@ function half_moment_update!(s::HMC{T}, θ::AbstractVector{T}, ∇θ) where {T}
     v, g = ∇θ(θ)
     g = -g  # everyone else works with negative loglikeprior 
     # Clipping
+    # TODO: expose this to the user
     ng = norm(g)
     maxnorm = T(5)
     g = ng > maxnorm ? maxnorm .* g ./ ng : g

@@ -1,5 +1,3 @@
-# Use Flux to find modes
-
 """
 FluxModeFinder(bnn::BNN, opt::O; windowlength = 100, ϵ = 1e-6) where {O<:Flux.Optimise.AbstractOptimiser}
 
@@ -16,7 +14,14 @@ mutable struct FluxModeFinder{B,O,T} <: BNNModeFinder
     ϵ::T
     i::Int
 end
-function FluxModeFinder(bnn::BNN, opt::O; windowlength=100, ϵ=1e-6) where {O<:Flux.Optimise.AbstractOptimiser}
+
+function FluxModeFinder(
+    bnn::BNN, 
+    opt::O; 
+    windowlength=100, 
+    ϵ=1e-6
+) where {O<:Flux.Optimise.AbstractOptimiser}
+
     T = eltype(bnn.like.nc.θ)
     ϵ = T(ϵ)
     window = fill(T(-Inf), windowlength)
@@ -41,7 +46,7 @@ function step!(fmf::FluxModeFinder, θ::AbstractVector{T}, ∇θ::Function) wher
     fmf.prevθ = copy(θ)
     fmf.i = fmf.i == fmf.windowlength ? 1 : fmf.i + 1
 
-    # We need optimisation while flux does by default minimisation. 
+    # We need maximisation while flux does by default minimisation. 
     # So we negate the gradient.
     Flux.update!(fmf.opt, θ, -g)
 

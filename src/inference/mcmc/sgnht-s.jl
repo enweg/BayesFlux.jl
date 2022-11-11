@@ -22,10 +22,6 @@ information processing systems, 27.
 - `t::Int`: Current step count
 - `kinetic::Vector`: Keeps track of the kinetic energy. Goal of SGNHT is to have
   the average close to one
-
-# Notes
-- Does not clip gradients since that seems to cause to a failure of the method.
-- TODO: why does this happen
 """
 mutable struct SGNHTS{T} <: MCMCState
     samples::Matrix{T}
@@ -41,9 +37,25 @@ mutable struct SGNHTS{T} <: MCMCState
 
     madapter::MassAdapter
 end
-SGNHTS(l::T, σA::T=T(1); xi=T(1), μ=T(1), madapter::MassAdapter=FixedMassAdapter()) where {T} = SGNHTS(Matrix{T}(undef, 0, 0), 0, T[], xi, l, σA, μ, 1, T[], madapter)
 
-function initialise!(s::SGNHTS{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling=false) where {T}
+function SGNHTS(
+    l::T, 
+    σA::T=T(1); 
+    xi=T(1), 
+    μ=T(1),
+    madapter::MassAdapter=FixedMassAdapter()
+) where {T} 
+
+    SGNHTS(Matrix{T}(undef, 0, 0), 0, T[], xi, l, σA, μ, 1, T[], madapter)
+end
+
+function initialise!(
+    s::SGNHTS{T}, 
+    θ::AbstractVector{T}, 
+    nsamples::Int; 
+    continue_sampling=false
+) where {T}
+
     samples = Matrix{T}(undef, length(θ), nsamples)
     kinetic = Vector{T}(undef, nsamples)
     if continue_sampling
@@ -58,7 +70,6 @@ function initialise!(s::SGNHTS{T}, θ::AbstractVector{T}, nsamples::Int; continu
     s.nsampled = nsampled
     s.t = t
     s.p = zero(θ)
-
 end
 
 function calculate_epochs(s::SGNHTS{T}, nbatches, nsamples; continue_sampling=false) where {T}
@@ -73,9 +84,6 @@ function update!(s::SGNHTS{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
     dist = MvNormal(zero.(θ), inv(Minv))
 
     v, g = ∇θ(θ)
-    # ng = norm(g)
-    # maxnorm = T(5)
-    # g = ng > maxnorm ? maxnorm.*g./ng : g
     # They work with potential energy which is negative loglike so negate
     # gradient 
     g = -g

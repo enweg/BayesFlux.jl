@@ -1,4 +1,3 @@
-# Gradient Guided Monte Carlo
 using LinearAlgebra
 
 """
@@ -53,9 +52,14 @@ mutable struct GGMC{T} <: MCMCState
 end
 
 
-function GGMC(type=Float32, ; β::T=0.55f0, l::T=0.0001f0,
+function GGMC(
+    type=Float32; 
+    β::T=0.55f0, 
+    l::T=0.0001f0,
     sadapter::StepsizeAdapter=DualAveragingStepSize(l),
-    madapter::MassAdapter=DiagCovMassAdapter(1000, 100), steps::Int=1) where {T}
+    madapter::MassAdapter=DiagCovMassAdapter(1000, 100), 
+    steps::Int=1
+) where {T}
 
     samples = Matrix{type}(undef, 1, 1)
     nsampled = 0
@@ -64,12 +68,32 @@ function GGMC(type=Float32, ; β::T=0.55f0, l::T=0.0001f0,
     M, Mhalf, Minv = diagm(ones(T, 1)), diagm(ones(T, 1)), diagm(ones(T, 1))
     momentum = zeros(T, 1)
 
-    return GGMC(samples, nsampled, t, accepted,
-        β, l, sadapter, M, Mhalf, Minv, madapter,
-        momentum, T(0), steps, 1)
+    return GGMC(
+        samples, 
+        nsampled, 
+        t, 
+        accepted,
+        β, 
+        l, 
+        sadapter, 
+        M, 
+        Mhalf, 
+        Minv, 
+        madapter,
+        momentum, 
+        T(0), 
+        steps, 
+        1
+    )
 end
 
-function initialise!(s::GGMC{T}, θ::AbstractVector{T}, nsamples; continue_sampling=false) where {T,S,M}
+function initialise!(
+    s::GGMC{T}, 
+    θ::AbstractVector{T}, 
+    nsamples; 
+    continue_sampling=false
+) where {T,S,M}
+
     samples = Matrix{T}(undef, length(θ), nsamples)
     accepted = zeros(Int, nsamples)
     if continue_sampling
@@ -91,7 +115,13 @@ function initialise!(s::GGMC{T}, θ::AbstractVector{T}, nsamples; continue_sampl
     s.momentum = zeros(T, n)
 end
 
-function calculate_epochs(s::GGMC{T}, nbatches, nsamples; continue_sampling=false) where {T,S,M}
+function calculate_epochs(
+    s::GGMC{T}, 
+    nbatches, 
+    nsamples; 
+    continue_sampling=false
+) where {T,S,M}
+
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
     epochs = ceil(Int, n_newsamples / nbatches)
     return epochs
@@ -99,6 +129,12 @@ end
 
 
 K(m, Minv) = 1 / 2 * m' * Minv * m
+
+function clip_gradient!(g; maxnorm=5.0f0)
+    ng = norm(g)
+    g .= ng > maxnorm ? maxnorm .* g ./ ng : g
+    return g
+end
 
 function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,M}
 
@@ -114,10 +150,8 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,
     g = -g
     # We must use gradient clipping with GGMC. In all other cases it always
     # seems to result in numerical problems.
-    # g = clip_gradient_value!(g, T(5.0))
-    ng = norm(g)
-    maxnorm = 5.0f0
-    g = ng > maxnorm ? maxnorm * g ./ ng : g
+    # TODO: expose this to users.
+    g = clip_gradient!(g)
 
     h = sqrt(h)
     momentum = s.momentum
@@ -133,10 +167,8 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,
     g = -g
     # We must use gradient clipping with GGMC. In all other cases it always
     # seems to result in numerical problems.
-    # g = clip_gradient_value!(g, T(5.0))
-    ng = norm(g)
-    maxnorm = 5.0f0
-    g = ng > maxnorm ? maxnorm * g ./ ng : g
+    # TODO: expose this to users.
+    g = clip_gradient!(g)
 
     momentum34 = momentum12 - h / T(2) * g
     s.momentum = sqrt(a) * momentum34 + sqrt((1 - a)) * s.Mhalf * rand(Normal(T(0), T(1)), length(θ))

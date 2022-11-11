@@ -1,6 +1,12 @@
 """
 Use the Dual Average method to tune the stepsize.
-TODO: Find reference. I believe this is the NUTS paper.
+
+The use of the Dual Average method was proposed in:
+
+Hoffman, M. D., & Gelman, A. (2014). The No-U-Turn Sampler: Adaptively Setting
+Path Lengths in Hamiltonian Monte Carlo. Journal of Machine Learning Research,
+15, 31.
+
 """
 mutable struct DualAveragingStepSize{T} <: StepsizeAdapter
     l::T
@@ -15,13 +21,29 @@ mutable struct DualAveragingStepSize{T} <: StepsizeAdapter
 
     adapt_steps::Int
 end
-function DualAveragingStepSize(initial_step_size::T; target_accept=T(0.65),
-    gamma=T(0.05), t0=10, kappa=T(0.75), adapt_steps=1000) where {T}
 
-    return DualAveragingStepSize(initial_step_size, log(10 * initial_step_size),
-        target_accept, gamma, t0, kappa, T(0), T(0), adapt_steps
+function DualAveragingStepSize(
+    initial_step_size::T; 
+    target_accept=T(0.65),
+    gamma=T(0.05), 
+    t0=10, 
+    kappa=T(0.75), 
+    adapt_steps=1000
+) where {T}
+
+    return DualAveragingStepSize(
+        initial_step_size, 
+        log(10 * initial_step_size),
+        target_accept, 
+        gamma, 
+        t0, 
+        kappa, 
+        T(0), 
+        T(0), 
+        adapt_steps
     )
 end
+
 function (sadapter::DualAveragingStepSize{T})(s::MCMCState, mh_probability) where {T}
     if sadapter.t > sadapter.adapt_steps
         s.l = exp(sadapter.log_averaged_step)
