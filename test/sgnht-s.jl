@@ -2,7 +2,7 @@
 using BFlux
 using Flux, Distributions, Random
 
-function test_SGNHTS_regression(; k=5, n=100_000)
+function test_SGNHTS_regression(; k=5, n=10_000)
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x' * β + 1.0f0 * randn(Float32, n)
@@ -16,13 +16,13 @@ function test_SGNHTS_regression(; k=5, n=100_000)
     bnn = BNN(x, y, like, prior, init)
 
     opt = FluxModeFinder(bnn, Flux.ADAM())
-    θmap = find_mode(bnn, 100, 300, opt)
+    θmap = find_mode(bnn, 100, 300, opt; showprogress=false)
 
     l = 1.0f-3
     madapter = RMSPropMassAdapter(1000)
     sampl = SGNHTS(l, 6.0f0; madapter=madapter)
 
-    ch = mcmc(bnn, 1000, 20_000, sampl; showprogress=false, θstart=θmap)
+    ch = mcmc(bnn, 1000, 20_000, sampl; showprogress=true, θstart=θmap)
     ch_short = ch[:, end-9999:end]
 
     θmean = mean(ch_short; dims=2)
@@ -42,7 +42,7 @@ function test_SGNHTS_regression(; k=5, n=100_000)
     return [test1, test2, test3, test4, test5]
 end
 
-
+Random.seed!(6150533)
 @testset "SGNHT-S" begin
     @testset "Linear Regression" begin
         ntests = 10
