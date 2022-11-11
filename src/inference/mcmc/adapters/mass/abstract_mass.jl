@@ -1,7 +1,7 @@
 
 
 """
- Adapt the mass matrix in MCMC and especially dynamic MCMCM methods such as 
+ Adapt the mass matrix in MCMC and especially dynamic MCMC methods such as 
  HMC, GGMC, SGLD, SGNHT, ...
 
  ## Mandatory Fields
