@@ -11,12 +11,12 @@ using Zygote
         k = 5
         x = randn(Float32, k, n)
         β = randn(Float32, k)
-        y = x'*β + randn(Float32, n)
+        y = x' * β + randn(Float32, n)
 
         net = Chain(Dense(5, 10, relu), Dense(10, 1))
         nc = destruct(net)
-        like = FeedforwardNormal(nc, Gamma(2.0, 2.0)) 
-        prior = GaussianPrior(nc, 10.f0)
+        like = FeedforwardNormal(nc, Gamma(2.0, 2.0))
+        prior = GaussianPrior(nc, 10.0f0)
         init = InitialiseAllSame(Uniform(-0.5f0, 0.5f0), like, prior)
 
         bnn = BNN(x, y, like, prior, init)
@@ -48,13 +48,13 @@ using Zygote
 
         # ∂yhat/∂θ
         yhat = net(x)[1]
-        z = vec(net[1].weight*x + net[1].bias)
+        z = vec(net[1].weight * x + net[1].bias)
         a = vec(sigmoid.(z))
 
         ∇W2 = reshape(vec(a), 1, 2)
         ∇b2 = 1.0
         ∇a = vec(net[2].weight)
-        ∇z = ∇a .* sigmoid.(z).*(1.0 .- sigmoid.(z))
+        ∇z = ∇a .* sigmoid.(z) .* (1.0 .- sigmoid.(z))
         ∇W1r1 = reshape(∇z[1] .* vec(x), 1, 2)
         ∇W1r2 = reshape(∇z[2] .* vec(x), 1, 2)
         ∇W1 = vcat(∇W1r1, ∇W1r2)
@@ -73,9 +73,9 @@ using Zygote
 
         # Guassian Likelihood contribution
         sigma = exp(θlike[1])
-        ∇like_sigma = -sigma^(-1) + sigma^(-3)*(y - yhat)^2
+        ∇like_sigma = -sigma^(-1) + sigma^(-3) * (y - yhat)^2
         ∇like_θlike = ∇like_sigma * exp(θlike[1])
-        ∇like_yhat = sigma^(-2)*(y - yhat)
+        ∇like_yhat = sigma^(-2) * (y - yhat)
         ∇like_θnet = ∇like_yhat .* ∇yhat_θnet
 
         g = Zygote.gradient((yhat, sigma) -> logpdf(Normal(yhat, sigma), y), yhat, sigma)

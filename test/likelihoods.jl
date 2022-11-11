@@ -6,7 +6,6 @@ using BFlux
 using Bijectors
 
 @testset "Likelihood Feedforward" begin
-
     @testset "Gaussian" begin
         net = Chain(Dense(10, 10, sigmoid), Dense(10, 1))
         nc = destruct(net)
@@ -66,7 +65,7 @@ using Bijectors
 end
 
 @testset "Likelihood Seq-to-One" begin
-    
+
     @testset "Gaussian" for rnn in [RNN, LSTM]
 
         net = Chain(RNN(10, 10), Dense(10, 1))
@@ -99,7 +98,7 @@ end
         ypp = predict(gl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
-        
+
     end
 
     @testset "TDist" for rnn in [RNN, LSTM]
