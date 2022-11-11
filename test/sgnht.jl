@@ -4,7 +4,7 @@
 using BFlux
 using Flux, Distributions, Random
 
-function test_SGNHT_regression(; k=5, n=100_000)
+function test_SGNHT_regression(; k=5, n=10_000)
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x' * β + 1.0f0 * randn(Float32, n)
@@ -21,7 +21,7 @@ function test_SGNHT_regression(; k=5, n=100_000)
     l = 2.0f-4
     sampl = SGNHT(l, 0.1f0 * 36.0f0; xi=0.1f0 * 36.0f0)
 
-    ch = mcmc(bnn, 1000, 20_000, sampl; showprogress=false)
+    ch = mcmc(bnn, 1000, 20_000, sampl; showprogress=true)
     # ch = mcmc(bnn, 1000, 20_000, sampl; showprogress = true, θstart = θmap)
     ch_short = ch[:, end-9999:end]
 
@@ -42,7 +42,7 @@ function test_SGNHT_regression(; k=5, n=100_000)
     return [test1, test2, test3, test4, test5]
 end
 
-
+Random.seed!(6150533)
 @testset "SGNHT" begin
     @testset "Linear Regression" begin
         ntests = 10
