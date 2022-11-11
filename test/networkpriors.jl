@@ -2,6 +2,7 @@
 # be callable and return the logprior density and it must implement a sample
 # method, sampling a vector of network parameters from the prior
 
+Random.seed!(6150533)
 @testset "Network Prior" begin
     @testset "Gaussian" for σ0 in [0.5, 1.0, 3.0, 10.0]
         @testset "Gaussian σ0 = $σ0" begin
