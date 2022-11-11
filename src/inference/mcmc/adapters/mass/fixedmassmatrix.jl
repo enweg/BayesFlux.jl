@@ -2,7 +2,7 @@ using LinearAlgebra
 """
 Use a fixed inverse mass matrix.
 """
-mutable struct FixedMassAdapter <: MassAdapter 
+mutable struct FixedMassAdapter <: MassAdapter
     Minv::AbstractMatrix
 end
 FixedMassAdapter() = FixedMassAdapter(Matrix(undef, 0, 0))

@@ -10,12 +10,12 @@ mutable struct RMSPropMassAdapter <: MassAdapter
     Minv::AbstractMatrix
     V::AbstractVector
     λ
-    α 
+    α
     t::Int
     adapt_steps::Int
 end
-function RMSPropMassAdapter(adapt_steps = 1000; Minv::AbstractMatrix = Matrix(undef, 0, 0), 
-    λ = 1f-5, α = 0.99f0)
+function RMSPropMassAdapter(adapt_steps=1000; Minv::AbstractMatrix=Matrix(undef, 0, 0),
+    λ=1.0f-5, α=0.99f0)
     return RMSPropMassAdapter(Minv, Vector[], λ, α, 1, adapt_steps)
 end
 function (madapter::RMSPropMassAdapter)(s::MCMCState, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
@@ -26,7 +26,7 @@ function (madapter::RMSPropMassAdapter)(s::MCMCState, θ::AbstractVector{T}, bnn
     v, g = ∇θ(θ)
     g ./= norm(g)
 
-    madapter.V = madapter.α * madapter.V + (1-madapter.α)*g.*g
+    madapter.V = madapter.α * madapter.V + (1 - madapter.α) * g .* g
     madapter.Minv = Diagonal(T(1) ./ (madapter.λ .+ sqrt.(madapter.V)))
     madapter.t += 1
     return madapter.Minv

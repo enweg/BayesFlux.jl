@@ -26,15 +26,15 @@ mutable struct SGNHT{T} <: MCMCState
     nsampled::Int
     p::AbstractVector{T}
     xi::T
-    l::T 
-    A::T 
+    l::T
+    A::T
     t::Int
 
     kinetic::Vector{T}
 end
-SGNHT(l::T, A::T = T(1); xi = T(0)) where {T} = SGNHT(Matrix{T}(undef, 0, 0), 0, T[], xi, l, A, 1, T[])
+SGNHT(l::T, A::T=T(1); xi=T(0)) where {T} = SGNHT(Matrix{T}(undef, 0, 0), 0, T[], xi, l, A, 1, T[])
 
-function initialise!(s::SGNHT{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling = false) where {T}
+function initialise!(s::SGNHT{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling=false) where {T}
     samples = Matrix{T}(undef, length(θ), nsamples)
     kinetic = Vector{T}(undef, nsamples)
     if continue_sampling
@@ -52,9 +52,9 @@ function initialise!(s::SGNHT{T}, θ::AbstractVector{T}, nsamples::Int; continue
 
 end
 
-function calculate_epochs(s::SGNHT{T}, nbatches, nsamples; continue_sampling = false) where {T}
+function calculate_epochs(s::SGNHT{T}, nbatches, nsamples; continue_sampling=false) where {T}
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
-    epochs = ceil(Int, n_newsamples/nbatches)
+    epochs = ceil(Int, n_newsamples / nbatches)
     return epochs
 end
 
@@ -71,12 +71,12 @@ function update!(s::SGNHT{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
         error("NaN in g")
     end
 
-    s.p = s.p - s.xi*s.l*s.p - s.l*g + sqrt(s.l*2*s.A)*rand(MvNormal(zero.(θ), one.(θ)))
-    θ = θ + s.l*s.p 
+    s.p = s.p - s.xi * s.l * s.p - s.l * g + sqrt(s.l * 2 * s.A) * rand(MvNormal(zero.(θ), one.(θ)))
+    θ = θ + s.l * s.p
     n = length(θ)
-    kinetic = T(1)/n * s.p'*s.p
+    kinetic = T(1) / n * s.p' * s.p
     s.kinetic[s.t] = kinetic
-    s.xi = s.xi + (kinetic - 1)*s.l
+    s.xi = s.xi + (kinetic - 1) * s.l
 
     if any(isnan.(θ))
         error("NaN in θ")

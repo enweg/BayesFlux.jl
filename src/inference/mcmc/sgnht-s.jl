@@ -32,8 +32,8 @@ mutable struct SGNHTS{T} <: MCMCState
     nsampled::Int
     p::AbstractVector{T}
     xi::T
-    l::T 
-    σA::T 
+    l::T
+    σA::T
     μ::T
     t::Int
 
@@ -41,9 +41,9 @@ mutable struct SGNHTS{T} <: MCMCState
 
     madapter::MassAdapter
 end
-SGNHTS(l::T, σA::T = T(1); xi = T(1), μ = T(1), madapter::MassAdapter = FixedMassAdapter()) where {T} = SGNHTS(Matrix{T}(undef, 0, 0), 0, T[], xi, l, σA, μ, 1, T[], madapter)
+SGNHTS(l::T, σA::T=T(1); xi=T(1), μ=T(1), madapter::MassAdapter=FixedMassAdapter()) where {T} = SGNHTS(Matrix{T}(undef, 0, 0), 0, T[], xi, l, σA, μ, 1, T[], madapter)
 
-function initialise!(s::SGNHTS{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling = false) where {T}
+function initialise!(s::SGNHTS{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling=false) where {T}
     samples = Matrix{T}(undef, length(θ), nsamples)
     kinetic = Vector{T}(undef, nsamples)
     if continue_sampling
@@ -61,9 +61,9 @@ function initialise!(s::SGNHTS{T}, θ::AbstractVector{T}, nsamples::Int; continu
 
 end
 
-function calculate_epochs(s::SGNHTS{T}, nbatches, nsamples; continue_sampling = false) where {T}
+function calculate_epochs(s::SGNHTS{T}, nbatches, nsamples; continue_sampling=false) where {T}
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
-    epochs = ceil(Int, n_newsamples/nbatches)
+    epochs = ceil(Int, n_newsamples / nbatches)
     return epochs
 end
 
@@ -84,23 +84,23 @@ function update!(s::SGNHTS{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
     end
 
     n = length(θ)
-    s.p = s.p - s.l/T(2)*g
-    θ = θ + s.l/T(2)*Minv*s.p 
-    s.xi = s.xi + s.l/(T(2)*s.μ) * (s.p'*Minv*s.p - n)  # We need kT = 1
+    s.p = s.p - s.l / T(2) * g
+    θ = θ + s.l / T(2) * Minv * s.p
+    s.xi = s.xi + s.l / (T(2) * s.μ) * (s.p' * Minv * s.p - n)  # We need kT = 1
     if s.xi != 0
-        s.p = exp(-s.xi*s.l)*s.p + s.σA*sqrt((1 - exp(-T(2)*s.xi*s.l))/(T(2)*s.xi)) * rand(dist)
+        s.p = exp(-s.xi * s.l) * s.p + s.σA * sqrt((1 - exp(-T(2) * s.xi * s.l)) / (T(2) * s.xi)) * rand(dist)
     else
-        s.p = s.p + sqrt(s.l)*s.σA*rand(dist)
+        s.p = s.p + sqrt(s.l) * s.σA * rand(dist)
     end
-    s.xi = s.xi + s.l/(T(2)*s.μ)*(s.p'*Minv*s.p - n)
-    θ = θ + s.l/T(2)*Minv*s.p
+    s.xi = s.xi + s.l / (T(2) * s.μ) * (s.p' * Minv * s.p - n)
+    θ = θ + s.l / T(2) * Minv * s.p
 
     if any(isnan.(θ))
         error("NaN in θ")
     end
 
     s.samples[:, s.t] = copy(θ)
-    s.kinetic[s.t] = 1/n * s.p'*Minv*s.p
+    s.kinetic[s.t] = 1 / n * s.p' * Minv * s.p
 
     s.t += 1
     s.nsampled += 1

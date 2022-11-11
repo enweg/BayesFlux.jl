@@ -52,14 +52,14 @@ mutable struct HMC{T} <: MCMCState
     Minv::AbstractMatrix{T}
 end
 function HMC(l::T, path_len::Int;
-    sadapter = DualAveragingStepSize(l), 
-    madapter = FullCovMassAdapter(1000, 100)) where {T}
+    sadapter=DualAveragingStepSize(l),
+    madapter=FullCovMassAdapter(1000, 100)) where {T}
 
-    return HMC(Matrix{T}(undef, 1, 1), 0, T[], T[], T[], 1, path_len, 1, Bool[], 
+    return HMC(Matrix{T}(undef, 1, 1), 0, T[], T[], T[], 1, path_len, 1, Bool[],
         sadapter, l, madapter, Matrix{T}(undef, 0, 0))
 end
 
-function initialise!(s::HMC{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling = false) where {T}
+function initialise!(s::HMC{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling=false) where {T}
     samples = Matrix{T}(undef, length(θ), nsamples)
     accepted = fill(false, nsamples)
     if continue_sampling
@@ -78,12 +78,12 @@ function initialise!(s::HMC{T}, θ::AbstractVector{T}, nsamples::Int; continue_s
     s.momentumold = zero(θ)
 
     s.l = s.sadapter.l
-    s.Minv = size(s.madapter.Minv, 1) == 0 ? Diagonal(one.(θ)) : s.madapter.Minv 
+    s.Minv = size(s.madapter.Minv, 1) == 0 ? Diagonal(one.(θ)) : s.madapter.Minv
 end
 
-function calculate_epochs(s::HMC{T}, nbatches, nsamples; continue_sampling = false) where {T}
+function calculate_epochs(s::HMC{T}, nbatches, nsamples; continue_sampling=false) where {T}
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
-    epochs = ceil(Int, n_newsamples*s.path_len/nbatches)
+    epochs = ceil(Int, n_newsamples * s.path_len / nbatches)
     return epochs
 end
 
@@ -93,7 +93,7 @@ function half_moment_update!(s::HMC{T}, θ::AbstractVector{T}, ∇θ) where {T}
     # Clipping
     ng = norm(g)
     maxnorm = T(5)
-    g = ng > maxnorm ? maxnorm.*g./ng : g
+    g = ng > maxnorm ? maxnorm .* g ./ ng : g
     s.momentum .-= s.l * g / T(2)
 end
 
@@ -111,7 +111,7 @@ function update!(s::HMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
         # Leapfrog loop 
         θ .+= s.l * s.momentum
         half_moment_update!(s, θ, ∇θ)
-    else 
+    else
         # Finishing off leapfrog and accept / reject
         θ .+= s.l * s.momentum
         half_moment_update!(s, θ, ∇θ)
@@ -127,13 +127,13 @@ function update!(s::HMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
         s.l = s.sadapter(s, min(exp(lMH), 1))
         s.Minv = s.madapter(s, θ, bnn, ∇θ)
 
-        if lr < lMH 
+        if lr < lMH
             # accepting
-            s.samples[:, s.nsampled + 1] = copy(θ)
-            s.accepted[s.nsampled + 1] = true
+            s.samples[:, s.nsampled+1] = copy(θ)
+            s.accepted[s.nsampled+1] = true
         else
             # rejecting
-            s.samples[:, s.nsampled + 1] = copy(s.θold)
+            s.samples[:, s.nsampled+1] = copy(s.θold)
             θ = copy(s.θold)
         end
         s.nsampled += 1
