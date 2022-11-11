@@ -17,7 +17,7 @@ export SeqToOneNormal, SeqToOneTDist
 include("./netpriors/abstract.jl")
 include("./netpriors/gaussian.jl")
 include("./netpriors/mixturescale.jl")
-export NetworkPrior, sample_prior 
+export NetworkPrior, sample_prior
 export GaussianPrior
 export MixtureScalePrior
 
@@ -45,7 +45,7 @@ include("./inference/mcmc/adapters/mass/diagcovariancemassadapter.jl")
 include("./inference/mcmc/adapters/mass/fixedmassmatrix.jl")
 include("./inference/mcmc/adapters/mass/fullcovariancemassadapter.jl")
 include("./inference/mcmc/adapters/mass/rmspropmassadapter.jl")
-export MassAdapter 
+export MassAdapter
 export DiagCovMassAdapter, FixedMassAdapter, FullCovMassAdapter, RMSPropMassAdapter
 # Stepsize Adapters
 include("./inference/mcmc/adapters/stepsize/abstract_stepsize.jl")
