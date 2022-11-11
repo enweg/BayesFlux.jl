@@ -5,6 +5,7 @@ using Test
 using LinearAlgebra
 
 @testset "BFlux" begin
+    Random.seed!(6150533)
     # destructing Networks and layers
     include("./deconstruct.jl")
     # # likelihoods
