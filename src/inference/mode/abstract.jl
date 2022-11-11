@@ -19,10 +19,10 @@ step!(mf::BNNModeFinder, θ::AbstractVector, ∇θ::Function) = error("$(typeof(
 
 Find the mode of a BNN.
 """
-function find_mode(bnn::BNN, batchsize::Int, epochs::Int, optimiser::BNNModeFinder; 
-    shuffle = true, partial = true, showprogress = true)
+function find_mode(bnn::BNN, batchsize::Int, epochs::Int, optimiser::BNNModeFinder;
+    shuffle=true, partial=true, showprogress=true)
 
-    if !partial && !shuffle 
+    if !partial && !shuffle
         @warn """shuffle and partial should not be both false unless the data is
         perfectly divided by the batchsize. If this is not the case, some data
         would never be considered"""
@@ -30,16 +30,16 @@ function find_mode(bnn::BNN, batchsize::Int, epochs::Int, optimiser::BNNModeFind
 
     θnet, θhyper, θlike = bnn.init()
     θ = vcat(θnet, θhyper, θlike)
-    batcher = Flux.Data.DataLoader((x = bnn.x, y = bnn.y), batchsize = batchsize, shuffle = shuffle, partial = partial)
+    batcher = Flux.Data.DataLoader((x=bnn.x, y=bnn.y), batchsize=batchsize, shuffle=shuffle, partial=partial)
     num_batches = length(batcher)
-    prog = Progress(num_batches * epochs; desc = "Finding Mode...", 
-        enabled = showprogress, showspeed = true)
+    prog = Progress(num_batches * epochs; desc="Finding Mode...",
+        enabled=showprogress, showspeed=true)
 
-    ∇θ(θ, x, y) = ∇loglikeprior(bnn, θ, x, y; num_batches = num_batches)
+    ∇θ(θ, x, y) = ∇loglikeprior(bnn, θ, x, y; num_batches=num_batches)
 
-    for e=1:epochs
-        for (x, y) in batcher 
-            θ, has_converged = step!(optimiser, θ, θ -> ∇θ(θ, x, y)) 
+    for e = 1:epochs
+        for (x, y) in batcher
+            θ, has_converged = step!(optimiser, θ, θ -> ∇θ(θ, x, y))
             if has_converged
                 @info "Converged!"
                 return θ

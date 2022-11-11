@@ -7,7 +7,7 @@ Use one of Flux optimisers to find the mode. Keep track of changes in θ over a 
 of `windowlegnth` and report convergence if the maximum change over the current window is 
 smaller than ϵ.
 """
-mutable struct FluxModeFinder{B, O, T} <: BNNModeFinder
+mutable struct FluxModeFinder{B,O,T} <: BNNModeFinder
     bnn::B
     opt::O
     windowlength::Int
@@ -16,7 +16,7 @@ mutable struct FluxModeFinder{B, O, T} <: BNNModeFinder
     ϵ::T
     i::Int
 end
-function FluxModeFinder(bnn::BNN, opt::O; windowlength = 100, ϵ = 1e-6) where {O<:Flux.Optimise.AbstractOptimiser}
+function FluxModeFinder(bnn::BNN, opt::O; windowlength=100, ϵ=1e-6) where {O<:Flux.Optimise.AbstractOptimiser}
     T = eltype(bnn.like.nc.θ)
     ϵ = T(ϵ)
     window = fill(T(-Inf), windowlength)
@@ -30,7 +30,7 @@ function step!(fmf::FluxModeFinder, θ::AbstractVector{T}, ∇θ::Function) wher
     # Checking for convergence
     if fmf.i == 1
         maxchange = maximum(abs, fmf.window)
-        if  maxchange <= fmf.ϵ
+        if maxchange <= fmf.ϵ
             return θ, true
         end
     end
