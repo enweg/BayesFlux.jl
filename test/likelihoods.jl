@@ -5,6 +5,7 @@ using Flux
 using BFlux
 using Bijectors
 
+Random.seed!(6150533)
 @testset "Likelihood Feedforward" begin
     @testset "Gaussian" begin
         net = Chain(Dense(10, 10, sigmoid), Dense(10, 1))
@@ -64,6 +65,7 @@ using Bijectors
     end
 end
 
+Random.seed!(6150533)
 @testset "Likelihood Seq-to-One" begin
 
     @testset "Gaussian" for rnn in [RNN, LSTM]
