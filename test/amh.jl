@@ -3,7 +3,7 @@ using BFlux
 using Flux, Distributions, Random
 using LinearAlgebra
 
-function test_AMH_regression(; k=5, n=100_000)
+function test_AMH_regression(; k=5, n=10_000)
     x = randn(Float32, k, n)
     β = randn(Float32, k)
     y = x' * β + 1.0f0 * randn(Float32, n)
