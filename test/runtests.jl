@@ -19,12 +19,12 @@ using LinearAlgebra
     # Mode Finding
     include("./modes.jl")
     # MCMC
-    include("./sgld.jl")
-    include("./sgnht.jl")
-    include("./sgnht-s.jl")
-    include("./ggmc.jl")
-    include("./amh.jl")
-    include("./hmc.jl")
-    # vi
-    include("./bbb.jl")
+    # include("./sgld.jl")
+    # include("./sgnht.jl")
+    # include("./sgnht-s.jl")
+    # include("./ggmc.jl")
+    # include("./amh.jl")
+    # include("./hmc.jl")
+    # # vi
+    # include("./bbb.jl")
 end
