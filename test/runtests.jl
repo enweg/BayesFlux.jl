@@ -4,6 +4,8 @@ using Distributions, Random, Bijectors
 using Test
 using LinearAlgebra
 
+println("Hostname: $(gethostname())")
+
 @testset "BFlux" begin
     Random.seed!(6150533)
     # destructing Networks and layers
