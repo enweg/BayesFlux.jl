@@ -20,13 +20,17 @@ println("Hostname: $(gethostname())")
     include("./bnn.jl")
     # Mode Finding
     include("./modes.jl")
-    # MCMC
-    # include("./sgld.jl")
-    # include("./sgnht.jl")
-    # include("./sgnht-s.jl")
-    # include("./ggmc.jl")
-    # include("./amh.jl")
-    # include("./hmc.jl")
-    # # vi
-    # include("./bbb.jl")
+
+    if gethostname()[1:2] != "fv"
+        @info "Host is not GitHub actions. Running all tests."
+        # MCMC
+        include("./sgld.jl")
+        include("./sgnht.jl")
+        include("./sgnht-s.jl")
+        include("./ggmc.jl")
+        include("./amh.jl")
+        include("./hmc.jl")
+        # vi
+        include("./bbb.jl")
+    end
 end
