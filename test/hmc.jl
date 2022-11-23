@@ -71,7 +71,7 @@ Random.seed!(6150533)
             for i = 1:ntests
                 results[i, :] = test_HMC_regression(madapter)
             end
-            pct_pass = mean(results; dims=2)
+            pct_pass = mean(results; dims=1)
 
             @test pct_pass[1] > 0.9
             @test pct_pass[2] > 0.9

@@ -47,7 +47,7 @@ end
         # memory, we will decrease the number of tests if the tests are run on 
         # GitHub actions. Hostnames on GH actions seem to always start with fv
         ntests = gethostname()[1:2] == "fv" ? 3 : 10
-        results = fill(false, ntests, 5)
+        results = fill(false, ntests, 1)
         for i = 1:ntests
             results[i, :] = test_AMH_regression()
         end
