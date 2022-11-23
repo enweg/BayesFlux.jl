@@ -58,7 +58,10 @@ Random.seed!(6150533)
     # instable for any reasonably stepsizes
     @testset "Linear Regression" for steps in [1, 2, 3]
         @testset "Steps = $steps" begin
-            ntests = 10
+            # Because GitHub Actions seem very slow and occasionally run out of 
+            # memory, we will decrease the number of tests if the tests are run on 
+            # GitHub actions. Hostnames on GH actions seem to always start with fv
+            ntests = gethostname()[1:2] == "fv" ? 3 : 10
             results = fill(false, ntests, 4)
             for i = 1:ntests
                 results[i, :] = test_GGMC_regression(steps)

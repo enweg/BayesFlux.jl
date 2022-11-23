@@ -21,16 +21,19 @@ println("Hostname: $(gethostname())")
     # Mode Finding
     include("./modes.jl")
 
-    if gethostname()[1:2] != "fv"
-        @info "Host is not GitHub actions. Running all tests."
-        # MCMC
-        include("./sgld.jl")
-        include("./sgnht.jl")
-        include("./sgnht-s.jl")
-        include("./ggmc.jl")
-        include("./amh.jl")
-        include("./hmc.jl")
-        # vi
-        include("./bbb.jl")
+    # Tests after this line are reduced in the number of samples when run 
+    # on GitHub actions. 
+    if gethostname()[1:2] == "fv" 
+        @info "Tests run on GitHub actions are reduced. For the full tests suit, please run tests on another machine."
+    end
+    # MCMC
+    include("./sgld.jl")
+    include("./sgnht.jl")
+    include("./sgnht-s.jl")
+    include("./ggmc.jl")
+    include("./amh.jl")
+    include("./hmc.jl")
+    # vi
+    include("./bbb.jl")
     end
 end
