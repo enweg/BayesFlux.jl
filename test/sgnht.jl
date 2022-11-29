@@ -48,7 +48,7 @@ Random.seed!(6150533)
         # Because GitHub Actions seem very slow and occasionally run out of 
         # memory, we will decrease the number of tests if the tests are run on 
         # GitHub actions. Hostnames on GH actions seem to always start with fv
-        ntests = gethostname()[1:2] == "fv" ? 3 : 10
+        ntests = gethostname()[1:2] == "fv" ? 1 : 10
         results = fill(false, ntests, 5)
         for i = 1:ntests
             results[i, :] = test_SGNHT_regression()
