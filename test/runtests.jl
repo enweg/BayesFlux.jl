@@ -35,5 +35,4 @@ println("Hostname: $(gethostname())")
     include("./hmc.jl")
     # vi
     include("./bbb.jl")
-    end
 end
