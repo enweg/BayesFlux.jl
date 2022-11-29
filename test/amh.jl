@@ -48,11 +48,11 @@ Random.seed!(6150533)
         # memory, we will decrease the number of tests if the tests are run on 
         # GitHub actions. Hostnames on GH actions seem to always start with fv
         ntests = gethostname()[1:2] == "fv" ? 1 : 10
-        results = fill(false, ntests, 1)
+        results = fill(false, ntests, 5)
         for i = 1:ntests
             results[i, :] = test_AMH_regression()
         end
-        pct_pass = mean(results; dims=2)
+        pct_pass = mean(results; dims=1)
 
         @test pct_pass[1] > 0.9
         @test pct_pass[2] > 0.9
