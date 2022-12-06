@@ -25,6 +25,8 @@ Stochastic Gradient Langevin Dynamics as proposed in Welling, M., & Teh, Y. W.
 - `stepsize_a::T`: See `stepsize`
 - `stepsize_b::T`: See `stepsize`
 - `stepsize_γ::T`: See `stepsize`
+- `maxnorm::T`: Maximimum gradient norm. Gradients are being clipped if norm
+  exceeds this value
 """
 mutable struct SGLD{T} <: MCMCState
     θ::AbstractVector{T}
@@ -38,6 +40,8 @@ mutable struct SGLD{T} <: MCMCState
     stepsize_b::T
     stepsize_γ::T
 
+    maxnorm::T  # maximum norm of gradient
+
 end
 
 function SGLD(
@@ -45,7 +49,8 @@ function SGLD(
     stepsize_a=0.1f0, 
     stepsize_b=1.0f0, 
     stepsize_γ=0.55f0, 
-    min_stepsize=Float32(-Inf)
+    min_stepsize=Float32(-Inf), 
+    maxnorm=25.0f0
 )
     return SGLD(
         type[], 
@@ -56,7 +61,8 @@ function SGLD(
         false, 
         stepsize_a, 
         stepsize_b, 
-        stepsize_γ
+        stepsize_γ, 
+        maxnorm
     )
 
 end
@@ -93,7 +99,7 @@ function update!(s::SGLD{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
     α = max(α, s.min_stepsize)
 
     v, g = ∇θ(θ)
-    g = clip_gradient_value!(g, 15)
+    g = clip_gradient!(g; maxnorm = s.maxnorm)
     g = α / T(2) .* g .+ sqrt(α) * randn(T, length(θ))
     θ .+= g
 

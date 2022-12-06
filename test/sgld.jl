@@ -1,7 +1,7 @@
 # Testing SGLD
 using BFlux
 using Flux, Distributions, Random
-using ReTest
+using Test
 
 function test_SGLD_regression(; k=5, n=10_000)
     x = randn(Float32, k, n)
