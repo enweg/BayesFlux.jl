@@ -2,19 +2,19 @@
 """
     abstract type MCMCState end
 
-Every MCMC method must be implemented via a MCMCSTate which keeps track of all 
+Every MCMC method must be implemented via a MCMCState which keeps track of all 
 important information. 
 
 # Mandatory Fields
 
 - `samples::Matrix` of dimension num_total_parameter×num_samples
-- `nsampled` the number of thus far sampled sampled
+- `nsampled` the number of thus far sampled samples
 
 # Mandatory Functions
-- `update!(sampler, θ, bnn, ∇θ)` where θ the current parameter vector and ∇θ(θ) is a
-  function providing gradients. The function must return θ and num_samples so
-  far sampled. 
-- `initialise!(sampler, θ, numsamples; continue_sampling)` which initialised the
+- `update!(sampler, θ, bnn, ∇θ)` where θ is the current parameter vector and
+  ∇θ(θ) is a function providing gradients. The function must return θ and
+  num_samples so far sampled. 
+- `initialise!(sampler, θ, numsamples; continue_sampling)` which initialises the
   sampler. If continue_sampling is true, then the final goal is to obtain
   numsamples samples and thus only the remaining ones still need to be sampled.
 - `calculate_epochs(sampler, numbatches, numsamples; continue_sampling)` which
@@ -27,14 +27,28 @@ important information.
 """
 abstract type MCMCState end
 
-calculate_epochs(sampler::MCMCState, nbatches, nsamples; continue_sampling = false) = error("$(typeof(sampler)) did not implement a calculate_epochs method. Please consult the documentation for MCMCState")
+function calculate_epochs(
+    sampler::MCMCState, 
+    nbatches, 
+    nsamples; 
+    continue_sampling=false
+) 
 
-update!(sampler::MCMCState, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T} = error("$(typeof(sampler)) has not implemented an update! method. Please consult the documentation for MCMCState")
+    error("$(typeof(sampler)) did not implement a calculate_epochs method. Please consult the documentation for MCMCState")
+end
+
+function update!(
+    sampler::MCMCState, 
+    θ::AbstractVector{T}, 
+    bnn::BNN, 
+    ∇θ
+) where {T} 
+
+    error("$(typeof(sampler)) has not implemented an update! method. Please consult the documentation for MCMCState")
+end
 
 """
-    mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState; 
-        shuffle = true, partial = true, showprogress = true, continue_sampling = false, 
-        θstart::AbstractVector{T} = vcat(bnn.init()...))
+    mcmc(args...; kwargs...)
 
 Sample from a BNN using MCMC
 
@@ -44,59 +58,70 @@ Sample from a BNN using MCMC
 - `batchsize`: batchsize
 - `numsamples`: number of samples to take
 - `sampler`: sampler to use 
-- `shuffle`: should data be shuffled after each epoch such that batches are
+
+# Keyword Arguments
+
+- `shuffle::Bool=true`: should data be shuffled after each epoch such that batches are
   different in each epoch? 
-- `partial`: are partial batches allowed? If true, some batches might be smaller
+- `partial::Bool=true`: are partial batches allowed? If true, some batches might be smaller
   than `batchsize`
-- `showprogress`: should a progress bar be shown? 
-- `continue_sampling`: If true and `numsamples` is larger than
+- `showprogress::Bool=true`: should a progress bar be shown? 
+- `continue_sampling::Bool=false`: If true and `numsamples` is larger than
   `sampler.nsampled` then additional samples will be taken 
-- `θstart`: starting parameter vector
+- `θstart::AbstractVector{T}=vcat(bnn.init()...)`: starting parameter vector
 
 """
-function mcmc(bnn::BNN, batchsize::Int, numsamples::Int, sampler::MCMCState; 
-    shuffle = true, partial = true, showprogress = true, continue_sampling = false, 
-    θstart::AbstractVector{T} = vcat(bnn.init()...)) where {T}
+function mcmc(
+    bnn::BNN, 
+    batchsize::Int, 
+    numsamples::Int, 
+    sampler::MCMCState;
+    shuffle=true, 
+    partial=true, 
+    showprogress=true, 
+    continue_sampling=false,
+    θstart::AbstractVector{T}=vcat(bnn.init()...)
+) where {T}
 
-    if !partial && !shuffle 
+    if !partial && !shuffle
         @warn """shuffle and partial should not be both false unless the data is
         perfectly divided by the batchsize. If this is not the case, some data
         would never be considered"""
     end
 
     # This allows to stop sampling and continue later
-    if continue_sampling 
+    if continue_sampling
         θ = sampler.samples[:, end]
-    else 
+    else
         θ = θstart
     end
 
     @info "Starting sampling at $θ"
     @info "Stating lπ = $(loglikeprior(bnn, θ, bnn.x, bnn.y))"
 
-    batcher = Flux.Data.DataLoader((x = bnn.x, y = bnn.y), 
-        batchsize = batchsize, shuffle = shuffle, partial = partial)
+    batcher = Flux.Data.DataLoader((x=bnn.x, y=bnn.y),
+        batchsize=batchsize, shuffle=shuffle, partial=partial)
 
     num_batches = length(batcher)
     tosample = continue_sampling ? numsamples - sampler.nsampled : numsamples
-    prog = Progress(tosample; desc = "Sampling...", 
-        enabled = showprogress, showspeed = true)
+    prog = Progress(tosample; desc="Sampling...",
+        enabled=showprogress, showspeed=true)
 
-    ∇θ(θ, x, y) = ∇loglikeprior(bnn, θ, x, y; num_batches = num_batches)
+    ∇θ(θ, x, y) = ∇loglikeprior(bnn, θ, x, y; num_batches=num_batches)
 
-    initialise!(sampler, θ, numsamples; continue_sampling = continue_sampling)
-    epochs = calculate_epochs(sampler, num_batches, numsamples; continue_sampling = continue_sampling)
+    initialise!(sampler, θ, numsamples; continue_sampling=continue_sampling)
+    epochs = calculate_epochs(sampler, num_batches, numsamples; continue_sampling=continue_sampling)
     @info "Running for $epochs epochs."
 
     nsampled = continue_sampling ? sampler.nsampled : 0
-    for e=1:epochs
-        for (x, y) in batcher 
+    for e = 1:epochs
+        for (x, y) in batcher
             nsampled == numsamples && break
             θ = update!(sampler, θ, bnn, θ -> ∇θ(θ, x, y))
             nsampled = sampler.nsampled
             ProgressMeter.update!(prog, nsampled)
         end
     end
-    
+
     return sampler.samples
 end

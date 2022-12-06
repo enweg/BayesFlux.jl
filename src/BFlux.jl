@@ -17,7 +17,7 @@ export SeqToOneNormal, SeqToOneTDist
 include("./netpriors/abstract.jl")
 include("./netpriors/gaussian.jl")
 include("./netpriors/mixturescale.jl")
-export NetworkPrior, sample_prior 
+export NetworkPrior, sample_prior
 export GaussianPrior
 export MixtureScalePrior
 
@@ -45,7 +45,7 @@ include("./inference/mcmc/adapters/mass/diagcovariancemassadapter.jl")
 include("./inference/mcmc/adapters/mass/fixedmassmatrix.jl")
 include("./inference/mcmc/adapters/mass/fullcovariancemassadapter.jl")
 include("./inference/mcmc/adapters/mass/rmspropmassadapter.jl")
-export MassAdapter 
+export MassAdapter
 export DiagCovMassAdapter, FixedMassAdapter, FullCovMassAdapter, RMSPropMassAdapter
 # Stepsize Adapters
 include("./inference/mcmc/adapters/stepsize/abstract_stepsize.jl")
@@ -78,23 +78,5 @@ export bbb
 # Utilities
 include("./utils/rnn_utils.jl")
 export make_rnn_tensor
-
-
-# include("./model/posterior.jl")
-# include("./optimise/modes.jl")
-# include("./sampling/laplace.jl")
-# include("./sampling/advi.jl")
-# include("./sampling/bbb.jl")
-# include("./sampling/sgld.jl")
-# include("./sampling/ggmc.jl")
-# include("./simulations/AR.jl")
-
-# ###### Exports
-# export posterior_predict
-# export lp, reconstruct_sample
-# export find_mode, find_mode_sgd
-# export laplace, SIR_laplace
-# export advi, bbb
-# export sgld, ggmc
 
 end # module

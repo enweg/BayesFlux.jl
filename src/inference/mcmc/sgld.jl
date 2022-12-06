@@ -9,7 +9,7 @@ Calculates the next stepsize according to ϵₜ = a(b+t)^(-γ). This is a common
 stepsize schedule that meets the criteria ∑ϵₜ = ∞, ∑ϵₜ² < ∞. 
 
 """
-stepsize(a, b, γ, t) = a*(b+t)^(-γ)
+stepsize(a, b, γ, t) = a * (b + t)^(-γ)
 
 """
 Stochastic Gradient Langevin Dynamics as proposed in Welling, M., & Teh, Y. W.
@@ -26,24 +26,48 @@ Stochastic Gradient Langevin Dynamics as proposed in Welling, M., & Teh, Y. W.
 - `stepsize_b::T`: See `stepsize`
 - `stepsize_γ::T`: See `stepsize`
 """
-mutable struct SGLD{T}<:MCMCState 
+mutable struct SGLD{T} <: MCMCState
     θ::AbstractVector{T}
     samples::Matrix{T}
     nsampled::Int
     t::Int
     min_stepsize::T
     didinform::Bool
-    
+
     stepsize_a::T
-    stepsize_b::T 
+    stepsize_b::T
     stepsize_γ::T
 
 end
-function SGLD(type = Float32; stepsize_a=0.1f0, stepsize_b=1f0, stepsize_γ=0.55f0, min_stepsize = Float32(-Inf))
-    return SGLD(type[], Matrix{type}(undef, 1, 1), 0, 1, min_stepsize, false, stepsize_a, stepsize_b, stepsize_γ)
+
+function SGLD(
+    type=Float32; 
+    stepsize_a=0.1f0, 
+    stepsize_b=1.0f0, 
+    stepsize_γ=0.55f0, 
+    min_stepsize=Float32(-Inf)
+)
+    return SGLD(
+        type[], 
+        Matrix{type}(undef, 1, 1), 
+        0, 
+        1, 
+        min_stepsize, 
+        false, 
+        stepsize_a, 
+        stepsize_b, 
+        stepsize_γ
+    )
+
 end
 
-function initialise!(s::SGLD{T}, θ::AbstractVector{T}, nsamples::Int; continue_sampling = false) where {T}
+function initialise!(
+    s::SGLD{T}, 
+    θ::AbstractVector{T}, 
+    nsamples::Int;
+    continue_sampling=false
+) where {T}
+
     samples = Matrix{T}(undef, length(θ), nsamples)
     if continue_sampling
         samples[:, 1:s.nsampled] = s.samples[:, 1:s.nsampled]
@@ -57,9 +81,9 @@ function initialise!(s::SGLD{T}, θ::AbstractVector{T}, nsamples::Int; continue_
     s.nsampled = nsampled
 end
 
-function calculate_epochs(s::SGLD{T}, nbatches, nsamples; continue_sampling = false) where {T} 
+function calculate_epochs(s::SGLD{T}, nbatches, nsamples; continue_sampling=false) where {T}
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
-    epochs = ceil(Int, n_newsamples/nbatches)
+    epochs = ceil(Int, n_newsamples / nbatches)
     return epochs
 end
 
@@ -70,7 +94,7 @@ function update!(s::SGLD{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
 
     v, g = ∇θ(θ)
     g = clip_gradient_value!(g, 15)
-    g = α/T(2) .* g .+ sqrt(α)*randn(T, length(θ))
+    g = α / T(2) .* g .+ sqrt(α) * randn(T, length(θ))
     θ .+= g
 
     s.samples[:, s.t] = copy(θ)

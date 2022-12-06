@@ -18,7 +18,7 @@ like the original network from a given vector.
   layer
 
 """
-struct NetConstructor{T, F}
+struct NetConstructor{T,F}
     num_params_network::Int
     θ::Vector{T}
     starts::Vector{Int}

@@ -46,7 +46,7 @@ include convergence criteria. As such, the algorithm will run for the full `maxi
 - `showprogress = true`: Should progress be shown? 
 
 """
-function advi(bnn::BNN, getq::Function, samples_per_step::Int, maxiters::Int; showprogress = true)
+function advi(bnn::BNN, getq::Function, samples_per_step::Int, maxiters::Int; showprogress=true)
     AdvancedVI.turnprogress(showprogress)
     lπ(θ) = loglikeprior(bnn, θ, bnn.x, bnn.y)
     θnet, θhyper, θlike = bnn.init()

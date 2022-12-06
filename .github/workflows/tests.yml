@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - main
+      - refactor-style
   push:
     branches:
       - main
+      - refactor-style
     tags: '*'
 jobs:
   test:

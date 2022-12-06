@@ -1,7 +1,3 @@
-################################################################################
-# Likelihood implementation are documented in implementation-likelihood.md
-################################################################################
-
 using Distributions
 using Bijectors
 
@@ -22,16 +18,16 @@ Assumes is a single output. Thus, the last layer must have output size one.
 - `prior_σ`: a prior distribution for the standard deviation
 
 """
-struct FeedforwardNormal{T, F, D<:Distributions.Distribution} <: BNNLikelihood
+struct FeedforwardNormal{T,F,D<:Distributions.Distribution} <: BNNLikelihood
     num_params_like::Int
-    nc::NetConstructor{T, F}
+    nc::NetConstructor{T,F}
     prior_σ::D
 end
-function FeedforwardNormal(nc::NetConstructor{T, F}, prior_σ::D) where {T, F, D<:Distributions.Distribution}
+function FeedforwardNormal(nc::NetConstructor{T,F}, prior_σ::D) where {T,F,D<:Distributions.Distribution}
     return FeedforwardNormal(1, nc, prior_σ)
 end
 
-function (l::FeedforwardNormal{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function (l::FeedforwardNormal{T,F,D})(x::Matrix{T}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
@@ -43,10 +39,10 @@ function (l::FeedforwardNormal{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Abst
 
     # Using reparameterised likelihood 
     # Usually results in faster gradients
-    return logpdf(MvNormal(zeros(n), I), (y-yhat)./sigma) - n*log(sigma) + logpdf(tdist, θlike[1])
+    return logpdf(MvNormal(zeros(n), I), (y - yhat) ./ sigma) - n * log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::FeedforwardNormal{T, F, D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function predict(l::FeedforwardNormal{T,F,D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
@@ -54,7 +50,7 @@ function predict(l::FeedforwardNormal{T, F, D}, x::Matrix{T}, θnet::AbstractVec
     yhat = vec(net(x))
     sigma = invlink(l.prior_σ, θlike[1])
 
-    ypp = rand(MvNormal(yhat, sigma^2*I))
+    ypp = rand(MvNormal(yhat, sigma^2 * I))
     return ypp
 end
 
@@ -77,17 +73,17 @@ Assumes is a single output. Thus, the last layer must have output size one.
 - `ν`: degrees of freedom
 
 """
-struct FeedforwardTDist{T, F, D<:Distributions.Distribution} <: BNNLikelihood
+struct FeedforwardTDist{T,F,D<:Distributions.Distribution} <: BNNLikelihood
     num_params_like::Int
-    nc::NetConstructor{T, F}
+    nc::NetConstructor{T,F}
     prior_σ::D
     ν::T
 end
-function FeedforwardTDist(nc::NetConstructor{T, F}, prior_σ::D, ν::T) where {T, F, D}
+function FeedforwardTDist(nc::NetConstructor{T,F}, prior_σ::D, ν::T) where {T,F,D}
     return FeedforwardTDist(1, nc, prior_σ, ν)
 end
 
-function (l::FeedforwardTDist{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function (l::FeedforwardTDist{T,F,D})(x::Matrix{T}, y::Vector{T}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
@@ -97,10 +93,10 @@ function (l::FeedforwardTDist{T, F, D})(x::Matrix{T}, y::Vector{T}, θnet::Abstr
     sigma = invlink(l.prior_σ, θlike[1])
     n = length(y)
 
-    return sum(logpdf.(TDist(l.ν), (y-yhat)./sigma)) - n*log(sigma) + logpdf(tdist, θlike[1])
+    return sum(logpdf.(TDist(l.ν), (y - yhat) ./ sigma)) - n * log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::FeedforwardTDist{T, F, D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T, F, D}
+function predict(l::FeedforwardTDist{T,F,D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
@@ -109,6 +105,6 @@ function predict(l::FeedforwardTDist{T, F, D}, x::Matrix{T}, θnet::AbstractVect
     sigma = invlink(l.prior_σ, θlike[1])
     n = length(yhat)
 
-    ypp = sigma*rand(TDist(l.ν), n) + yhat
+    ypp = sigma * rand(TDist(l.ν), n) + yhat
     return ypp
 end

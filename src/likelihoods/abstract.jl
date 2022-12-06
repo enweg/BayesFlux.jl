@@ -33,11 +33,14 @@ the posterior predictive given network parameters and likelihood parameters.
 """
 abstract type BNNLikelihood end
 
-function (l::BNNLikelihood)(x::Union{Vector{Matrix{T}}, Matrix{T}, Array{T, 3}}, 
-  y::Union{Vector{T}, Matrix{T}}, 
-  θnet::AbstractVector, θlike::AbstractVector) where {T}
+function (l::BNNLikelihood)(
+    x::Union{Vector{Matrix{T}},Matrix{T},Array{T,3}},
+    y::Union{Vector{T},Matrix{T}},
+    θnet::AbstractVector, 
+    θlike::AbstractVector
+) where {T}
 
-  error("Seems like your likelihood is not callable. Please see the documentation for BNNLikelihood.")
+    error("Seems like your likelihood is not callable. Please see the documentation for BNNLikelihood.")
 end
 
 predict(l::BNNLikelihood, x, θnet, θlike) = error("Seems like your likelihood did not implement a predict method. Please see the documentation for BNNLikelihood.")

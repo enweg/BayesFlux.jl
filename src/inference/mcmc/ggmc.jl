@@ -1,4 +1,3 @@
-# Gradient Guided Monte Carlo
 using LinearAlgebra
 
 """
@@ -13,7 +12,7 @@ with stochastic gradients. arXiv preprint arXiv:2102.01691.
   then not all columns will actually correspond to samples. See `nsampled` to
   check how many samples were actually taken
 - `nsampled::Int`: Number of samples taken. 
-- `t::Int`: Current time step
+- `t::Int`: Total number of steps taken.
 - `accepted::Vector{Bool}`: If true, sample was accepted; If false, proposed
   sample was rejected and previous sample was taken. 
 - `β::T`: See paper. 
@@ -27,13 +26,13 @@ with stochastic gradients. arXiv preprint arXiv:2102.01691.
 - `momentum::AbstractVector`: Last momentum vector
 - `lMH::T`: log of Metropolis-Hastings ratio. 
 - `steps::Int`: Number of steps to take before calculating MH ratio. 
-- `current_step::Int`: Current step. 
+- `current_step::Int`: Current step in the recurrent sequence 1, ..., `steps`. 
 
 """
 mutable struct GGMC{T} <: MCMCState
     samples::Matrix{T}
     nsampled::Int
-    t::Int 
+    t::Int
     accepted::Vector{Int}
 
     β::T
@@ -53,24 +52,49 @@ mutable struct GGMC{T} <: MCMCState
 end
 
 
-function GGMC(type = Float32, ;β::T = 0.55f0, l::T = 0.0001f0, 
-    sadapter::StepsizeAdapter = DualAveragingStepSize(l), 
-    madapter::MassAdapter = DiagCovMassAdapter(1000, 100), steps::Int = 1) where {T}
+function GGMC(
+    type=Float32; 
+    β::T=0.55f0, 
+    l::T=0.0001f0,
+    sadapter::StepsizeAdapter=DualAveragingStepSize(l),
+    madapter::MassAdapter=DiagCovMassAdapter(1000, 100), 
+    steps::Int=1
+) where {T}
 
     samples = Matrix{type}(undef, 1, 1)
     nsampled = 0
     t = 1
     accepted = Int[]
-    M, Mhalf, Minv = diagm(ones(T, 1)), diagm(ones(T, 1)), diagm(ones(T, 1)) 
+    M, Mhalf, Minv = diagm(ones(T, 1)), diagm(ones(T, 1)), diagm(ones(T, 1))
     momentum = zeros(T, 1)
 
-    return GGMC(samples, nsampled, t, accepted, 
-        β, l, sadapter, M, Mhalf, Minv, madapter, 
-        momentum, T(0), steps, 1)
+    return GGMC(
+        samples, 
+        nsampled, 
+        t, 
+        accepted,
+        β, 
+        l, 
+        sadapter, 
+        M, 
+        Mhalf, 
+        Minv, 
+        madapter,
+        momentum, 
+        T(0), 
+        steps, 
+        1
+    )
 end
 
-function initialise!(s::GGMC{T}, θ::AbstractVector{T}, nsamples; continue_sampling = false) where {T, S, M}
-    samples = Matrix{T}(undef, length(θ), nsamples) 
+function initialise!(
+    s::GGMC{T}, 
+    θ::AbstractVector{T}, 
+    nsamples; 
+    continue_sampling=false
+) where {T,S,M}
+
+    samples = Matrix{T}(undef, length(θ), nsamples)
     accepted = zeros(Int, nsamples)
     if continue_sampling
         samples[:, 1:s.nsampled] = s.samples[:, 1:s.nsampled]
@@ -82,7 +106,8 @@ function initialise!(s::GGMC{T}, θ::AbstractVector{T}, nsamples; continue_sampl
     s.samples = samples
     s.t = t
     s.nsampled = nsampled
-    s.accepted = accepted 
+    s.accepted = accepted
+    s.current_step = 1
 
     n = length(θ)
     if !continue_sampling
@@ -91,18 +116,30 @@ function initialise!(s::GGMC{T}, θ::AbstractVector{T}, nsamples; continue_sampl
     s.momentum = zeros(T, n)
 end
 
-function calculate_epochs(s::GGMC{T}, nbatches, nsamples; continue_sampling = false) where {T, S, M}
+function calculate_epochs(
+    s::GGMC{T}, 
+    nbatches, 
+    nsamples; 
+    continue_sampling=false
+) where {T,S,M}
+
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
     epochs = ceil(Int, n_newsamples / nbatches)
     return epochs
 end
 
 
-K(m, Minv) = 1/2 * m' * Minv * m
+K(m, Minv) = 1 / 2 * m' * Minv * m
 
-function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S, M}
+function clip_gradient!(g; maxnorm=5.0f0)
+    ng = norm(g)
+    g .= ng > maxnorm ? maxnorm .* g ./ ng : g
+    return g
+end
 
-    γ = -sqrt(length(bnn.y)/s.l)*log(s.β)
+function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,M}
+
+    γ = -sqrt(length(bnn.y) / s.l) * log(s.β)
     h = sqrt(s.l / length(bnn.y))
     a = exp(-γ * h)
 
@@ -114,16 +151,14 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S
     g = -g
     # We must use gradient clipping with GGMC. In all other cases it always
     # seems to result in numerical problems.
-    # g = clip_gradient_value!(g, T(5.0))
-    ng = norm(g)
-    maxnorm = 5.0f0
-    g = ng > maxnorm ? maxnorm*g./ng : g
+    # TODO: expose this to users.
+    g = clip_gradient!(g)
 
     h = sqrt(h)
     momentum = s.momentum
-    momentum14 = sqrt(a)*momentum + sqrt((T(1)-a))*s.Mhalf*randn(length(θ))
-    momentum12 = momentum14 .- h/T(2) * g
-    θ .+= h*s.Minv*momentum12 
+    momentum14 = sqrt(a) * momentum + sqrt((T(1) - a)) * s.Mhalf * randn(length(θ))
+    momentum12 = momentum14 .- h / T(2) * g
+    θ .+= h * s.Minv * momentum12
 
     if any(isnan.(θ))
         error("NaN in θ")
@@ -133,13 +168,11 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S
     g = -g
     # We must use gradient clipping with GGMC. In all other cases it always
     # seems to result in numerical problems.
-    # g = clip_gradient_value!(g, T(5.0))
-    ng = norm(g)
-    maxnorm = 5.0f0
-    g = ng > maxnorm ? maxnorm*g./ng : g
+    # TODO: expose this to users.
+    g = clip_gradient!(g)
 
-    momentum34 = momentum12 - h/T(2)*g
-    s.momentum = sqrt(a)*momentum34 + sqrt((1-a))*s.Mhalf*rand(Normal(T(0), T(1)), length(θ))
+    momentum34 = momentum12 - h / T(2) * g
+    s.momentum = sqrt(a) * momentum34 + sqrt((1 - a)) * s.Mhalf * rand(Normal(T(0), T(1)), length(θ))
 
     s.lMH += K(momentum34, s.Minv) - K(momentum14, s.Minv)
     s.samples[:, s.t] = copy(θ)
@@ -149,18 +182,18 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T, S
         s.lMH += loglikeprior(bnn, θ, bnn.x, bnn.y)
 
         s.l = s.sadapter(s, min(exp(s.lMH), 1))
-        s.Minv = s.madapter(s, θ, bnn, ∇θ) 
+        s.Minv = s.madapter(s, θ, bnn, ∇θ)
         s.M = inv(s.Minv)
-        s.Mhalf = cholesky(s.M; check = false).L
+        s.Mhalf = cholesky(s.M; check=false).L
 
         r = rand()
         if r < min(exp(s.lMH), 1) #|| s.nsampled == 1 
             # accepting 
-            s.accepted[(s.nsampled - s.steps + 1):s.nsampled] = ones(Int, s.steps) 
+            s.accepted[(s.nsampled-s.steps+1):s.nsampled] = ones(Int, s.steps)
         else
             # rejecting
-            s.samples[:, (s.nsampled - s.steps + 1):s.nsampled] = hcat(fill(copy(s.samples[:, s.nsampled - s.steps]), s.steps)...)
-            θ = copy(s.samples[:, s.nsampled - s.steps])
+            s.samples[:, (s.nsampled-s.steps+1):s.nsampled] = hcat(fill(copy(s.samples[:, s.nsampled-s.steps]), s.steps)...)
+            θ = copy(s.samples[:, s.nsampled-s.steps])
         end
     end
 
