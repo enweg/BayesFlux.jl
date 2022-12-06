@@ -1,5 +1,7 @@
 module BFlux
 
+include("./utils/gradient_utils.jl")
+
 include("./layers/dense.jl")
 include("./layers/recurrent.jl")
 

@@ -1,5 +1,4 @@
 using LinearAlgebra
-include("../../utils/gradient_utils.jl")
 
 """
 Gradient Guided Monte Carlo
@@ -28,6 +27,8 @@ with stochastic gradients. arXiv preprint arXiv:2102.01691.
 - `lMH::T`: log of Metropolis-Hastings ratio. 
 - `steps::Int`: Number of steps to take before calculating MH ratio. 
 - `current_step::Int`: Current step in the recurrent sequence 1, ..., `steps`. 
+- `maxnorm::T`: Maximimum gradient norm. Gradients are being clipped if norm
+  exceeds this value
 
 """
 mutable struct GGMC{T} <: MCMCState

@@ -32,6 +32,8 @@ https://colindcarroll.com/2019/04/11/hamiltonian-monte-carlo-from-scratch/
 - `madapter::MassAdapter`: Mass matrix adapter giving the inverse mass matrix in
   each iteration.
 - `Minv::AbstractMatrix`: Inverse mass matrix
+- `maxnorm::T`: Maximimum gradient norm. Gradients are being clipped if norm
+  exceeds this value
 """
 mutable struct HMC{T} <: MCMCState
     samples::Matrix{T}
@@ -50,17 +52,20 @@ mutable struct HMC{T} <: MCMCState
     l::T
     madapter::MassAdapter
     Minv::AbstractMatrix{T}
+
+    maxnorm::T  # maximum gradient norm
 end
 
 function HMC(
     l::T, 
     path_len::Int;
     sadapter=DualAveragingStepSize(l),
-    madapter=FullCovMassAdapter(1000, 100)
+    madapter=FullCovMassAdapter(1000, 100), 
+    maxnorm::T=5.0f0
 ) where {T}
 
     return HMC(Matrix{T}(undef, 1, 1), 0, T[], T[], T[], 1, path_len, 1, Bool[],
-        sadapter, l, madapter, Matrix{T}(undef, 0, 0))
+        sadapter, l, madapter, Matrix{T}(undef, 0, 0), maxnorm)
 end
 
 function initialise!(
@@ -102,9 +107,7 @@ function half_moment_update!(s::HMC{T}, θ::AbstractVector{T}, ∇θ) where {T}
     g = -g  # everyone else works with negative loglikeprior 
     # Clipping
     # TODO: expose this to the user
-    ng = norm(g)
-    maxnorm = T(5)
-    g = ng > maxnorm ? maxnorm .* g ./ ng : g
+    g = clip_gradient!(g; maxnorm=s.maxnorm)
     s.momentum .-= s.l * g / T(2)
 end
 
