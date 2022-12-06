@@ -106,7 +106,6 @@ function half_moment_update!(s::HMC{T}, θ::AbstractVector{T}, ∇θ) where {T}
     v, g = ∇θ(θ)
     g = -g  # everyone else works with negative loglikeprior 
     # Clipping
-    # TODO: expose this to the user
     g = clip_gradient!(g; maxnorm=s.maxnorm)
     s.momentum .-= s.l * g / T(2)
 end
