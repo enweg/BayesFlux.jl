@@ -1,4 +1,5 @@
 using LinearAlgebra
+include("../../utils/gradient_utils.jl")
 
 """
 Gradient Guided Monte Carlo
@@ -49,6 +50,8 @@ mutable struct GGMC{T} <: MCMCState
 
     steps::Int  # Delayed acceptance
     current_step::Int
+
+    maxnorm::T  # maximum gradient norm
 end
 
 
@@ -58,7 +61,8 @@ function GGMC(
     l::T=0.0001f0,
     sadapter::StepsizeAdapter=DualAveragingStepSize(l),
     madapter::MassAdapter=DiagCovMassAdapter(1000, 100), 
-    steps::Int=1
+    steps::Int=1,
+    maxnorm::T=5.0f0
 ) where {T}
 
     samples = Matrix{type}(undef, 1, 1)
@@ -83,7 +87,8 @@ function GGMC(
         momentum, 
         T(0), 
         steps, 
-        1
+        1, 
+        maxnorm
     )
 end
 
@@ -131,12 +136,6 @@ end
 
 K(m, Minv) = 1 / 2 * m' * Minv * m
 
-function clip_gradient!(g; maxnorm=5.0f0)
-    ng = norm(g)
-    g .= ng > maxnorm ? maxnorm .* g ./ ng : g
-    return g
-end
-
 function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,M}
 
     γ = -sqrt(length(bnn.y) / s.l) * log(s.β)
@@ -152,7 +151,7 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,
     # We must use gradient clipping with GGMC. In all other cases it always
     # seems to result in numerical problems.
     # TODO: expose this to users.
-    g = clip_gradient!(g)
+    g = clip_gradient!(g; maxnorm=s.maxnorm)
 
     h = sqrt(h)
     momentum = s.momentum
@@ -169,7 +168,7 @@ function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,
     # We must use gradient clipping with GGMC. In all other cases it always
     # seems to result in numerical problems.
     # TODO: expose this to users.
-    g = clip_gradient!(g)
+    g = clip_gradient!(g; maxnorm=s.maxnorm)
 
     momentum34 = momentum12 - h / T(2) * g
     s.momentum = sqrt(a) * momentum34 + sqrt((1 - a)) * s.Mhalf * rand(Normal(T(0), T(1)), length(θ))
