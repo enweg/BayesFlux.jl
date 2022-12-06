@@ -20,10 +20,10 @@ Every BNNLikelihood must be callable in the following way
 - `θlike` are the likelihood parameters. If no additional parameters were
   introduced, this will be an empty array
 
-Every BNNLikelihood must also implement a predict method which should draw from
+Every BNNLikelihood must also implement a posterior_predict method which should draw from
 the posterior predictive given network parameters and likelihood parameters. 
 
-    predict(l::BNNLikelihood, x, θnet, θlike)
+    posterior_predict(l::BNNLikelihood, x, θnet, θlike)
 
 - `l` the BNNLikelihood
 - `x` the input data 
@@ -43,4 +43,4 @@ function (l::BNNLikelihood)(
     error("Seems like your likelihood is not callable. Please see the documentation for BNNLikelihood.")
 end
 
-predict(l::BNNLikelihood, x, θnet, θlike) = error("Seems like your likelihood did not implement a predict method. Please see the documentation for BNNLikelihood.")
+posterior_predict(l::BNNLikelihood, x, θnet, θlike) = error("Seems like your likelihood did not implement a posterior_predict method. Please see the documentation for BNNLikelihood.")

@@ -33,7 +33,7 @@ Random.seed!(6150533)
         # Similarly, using any x should result in predictions that are 
         # distributed according to a standard normal
         x = randn(T, 10, 100_000)
-        ypp = predict(gl, x, θ, [tσ])
+        ypp = posterior_predict(gl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
     end
@@ -59,7 +59,7 @@ Random.seed!(6150533)
 
         # And doing the same for prediction
         x = randn(T, 10, 100_000)
-        ypp = predict(tl, x, θ, [tσ])
+        ypp = posterior_predict(tl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
     end
@@ -97,7 +97,7 @@ Random.seed!(6150533)
         # distributed according to a standard normal
         # x = [randn(T, 10, 100_000) for _ in 1:10]
         x = randn(T, 10, 10, 100_000)
-        ypp = predict(gl, x, θ, [tσ])
+        ypp = posterior_predict(gl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
 
@@ -126,7 +126,7 @@ Random.seed!(6150533)
         # And doing the same for prediction
         # x = [randn(T, 10, 100_000) for _ in 1:10]
         x = randn(T, 10, 10, 100_000)
-        ypp = predict(tl, x, θ, [tσ])
+        ypp = posterior_predict(tl, x, θ, [tσ])
         q = T.(quantile.([ypp], 0.1:0.1:0.9))
         @test maximum(abs, q - y) < 0.05
     end
