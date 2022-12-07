@@ -12,7 +12,7 @@ export NetConstructor
 include("./likelihoods/abstract.jl")
 include("./likelihoods/feedforward.jl")
 include("./likelihoods/seq_to_one.jl")
-export BNNLikelihood, predict
+export BNNLikelihood, posterior_predict
 export FeedforwardNormal, FeedforwardTDist
 export SeqToOneNormal, SeqToOneTDist
 

@@ -43,7 +43,7 @@ function (l::SeqToOneNormal{T,F,D})(x::Array{T,3}, y::Vector{T}, θnet::Abstract
     return logpdf(MvNormal(zeros(n), I), (y - yhat) ./ sigma) - n * log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::SeqToOneNormal{T,F,D}, x::Array{T,3}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
+function posterior_predict(l::SeqToOneNormal{T,F,D}, x::Array{T,3}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
 
     θnet = T.(θnet)
     θlike = T.(θlike)
@@ -99,7 +99,7 @@ function (l::SeqToOneTDist{T,F,D})(x::Array{T,3}, y::Vector{T}, θnet::AbstractV
     return sum(logpdf.(TDist(l.ν), (y - yhat) ./ sigma)) - n * log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function predict(l::SeqToOneTDist{T,F,D}, x::Array{T,3}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
+function posterior_predict(l::SeqToOneTDist{T,F,D}, x::Array{T,3}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
