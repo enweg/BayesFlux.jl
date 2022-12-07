@@ -96,7 +96,7 @@ function (l::FeedforwardTDist{T,F,D})(x::Matrix{T}, y::Vector{T}, θnet::Abstrac
     return sum(logpdf.(TDist(l.ν), (y - yhat) ./ sigma)) - n * log(sigma) + logpdf(tdist, θlike[1])
 end
 
-function posterior_predictl(l::FeedforwardTDist{T,F,D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
+function posterior_predict(l::FeedforwardTDist{T,F,D}, x::Matrix{T}, θnet::AbstractVector, θlike::AbstractVector) where {T,F,D}
     θnet = T.(θnet)
     θlike = T.(θlike)
 
