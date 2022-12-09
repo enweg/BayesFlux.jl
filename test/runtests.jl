@@ -20,6 +20,8 @@ println("Hostname: $(gethostname())")
     include("./bnn.jl")
     # Mode Finding
     include("./modes.jl")
+    # Posterior Predictive Draws
+    include("./posterior_predict.jl")
 
     # Tests after this line are reduced in the number of samples when run 
     # on GitHub actions. 

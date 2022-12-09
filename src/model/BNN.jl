@@ -130,6 +130,6 @@ Sample from the posterior predictive distribution.
 function sample_posterior_predict(bnn::BNN, ch::AbstractMatrix{T}; x=bnn.x) where {T}
     θnets = [T.(split_params(bnn, ch[:, i])[1]) for i = 1:size(ch, 2)]
     θlikes = [T.(split_params(bnn, ch[:, i])[3]) for i = 1:size(ch, 2)]
-    ys = reduce(hcat, [predict(bnn.like, x, θnet, θlike) for (θnet, θlike) in zip(θnets, θlikes)])
+    ys = reduce(hcat, [posterior_predict(bnn.like, x, θnet, θlike) for (θnet, θlike) in zip(θnets, θlikes)])
     return ys
 end
