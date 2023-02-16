@@ -1,4 +1,3 @@
 {
-    "editor.detectIndentation": false,
-    "julia.environmentPath": "/Users/enricowegner/Documents/BFlux.jl"
+    "editor.detectIndentation": false
 }
