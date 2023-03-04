@@ -1,4 +1,4 @@
-using BFlux
+using BayesFlux
 using Flux
 using Distributions, Random, Bijectors
 using Test
@@ -6,7 +6,7 @@ using LinearAlgebra
 
 println("Hostname: $(gethostname())")
 
-@testset "BFlux" begin
+@testset "BayesFlux" begin
     Random.seed!(6150533)
     # destructing Networks and layers
     include("./deconstruct.jl")

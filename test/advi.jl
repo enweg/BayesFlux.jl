@@ -1,4 +1,4 @@
-using Flux, BFlux
+using Flux, BayesFlux
 using Random, Distributions
 using ReTest
 

@@ -1,14 +1,14 @@
 # Example: Recurrent Neural Networks
 
-Next to Dense layers, BFlux also implements RNN and LSTM layers. These two do
+Next to Dense layers, BayesFlux also implements RNN and LSTM layers. These two do
 require some additional care though, since the layout of the data must be
 adjusted. In general, the last dimension of `x` and `y` is always the dimension
-along which BFlux batches, which is also what Flux does. Thus, if we are in a
+along which BayesFlux batches, which is also what Flux does. Thus, if we are in a
 seq-to-one setting then the sequences must be along the last dimension (here the
 third). To demonstrate this, let us simulate some AR1 data
 
 !!! note "Note" 
-    BFlux currently only implements univariate regression problems (a single
+    BayesFlux currently only implements univariate regression problems (a single
     dependent variable) and for recurrent structures only seq-to-one type of
     settings. This can be extended by the user. For this see
     [`BNNLikelihood`](@ref)

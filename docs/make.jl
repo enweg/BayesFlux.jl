@@ -1,9 +1,9 @@
 using Documenter
-using BFlux
+using BayesFlux
 
 push!(LOAD_PATH, "../src/")
 makedocs(
-    sitename = "BFlux.jl Documentation",
+    sitename = "BayesFlux.jl Documentation",
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", nothing) == "true"
     ),
@@ -36,9 +36,9 @@ makedocs(
         "Initialisation" => ["initialise/init.md"], 
         "Utils" => ["utils/recurrent.md"]
     ],
-    modules = [BFlux]
+    modules = [BayesFlux]
 )
 
 deploydocs(
-    repo = "github.com/enweg/BFlux.jl.git",
+    repo = "github.com/enweg/BayesFlux.jl.git",
 )

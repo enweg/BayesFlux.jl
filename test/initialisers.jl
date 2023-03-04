@@ -1,6 +1,6 @@
 using Flux
 using Distributions, Random
-using BFlux
+using BayesFlux
 
 Random.seed!(6150533)
 @testset "Initialise" begin

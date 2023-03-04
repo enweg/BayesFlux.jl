@@ -1,4 +1,4 @@
-module BFlux
+module BayesFlux
 
 include("./utils/gradient_utils.jl")
 

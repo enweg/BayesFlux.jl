@@ -4,7 +4,7 @@ using Flux
     @testset "Destructuring" begin
         net = Dense(10, 10)
         x = randn(10, 10)
-        θ, re = BFlux.destruct(net)
+        θ, re = BayesFlux.destruct(net)
         net_re = re(θ)
 
         yoriginal = net(x)

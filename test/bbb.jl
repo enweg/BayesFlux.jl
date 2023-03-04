@@ -1,4 +1,4 @@
-using BFlux
+using BayesFlux
 using Flux, Distributions, Random
 
 function test_BBB_regression(; k=5, n=10_000)

@@ -1,23 +1,23 @@
 # <!-- Create the .md file by running 
 # Literate.markdown("./README.jl", flavor = Literate.CommonMarkFlavor()) -->
 
-# [![CI](https://github.com/enweg/BFlux.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/enweg/BFlux.jl/actions/workflows/tests.yml)
-# [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://enweg.github.io/BFlux.jl/stable)
-# [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://enweg.github.io/BFlux.jl/dev)
+# [![CI](https://github.com/enweg/BayesFlux.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/enweg/BayesFlux.jl/actions/workflows/tests.yml)
+# [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://enweg.github.io/BayesFlux.jl/stable)
+# [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://enweg.github.io/BayesFlux.jl/dev)
 
-using BFlux, Flux
+using BayesFlux, Flux
 using Random, Distributions
 using StatsPlots
 
 Random.seed!(6150533)
 
-# ## BFlux (Bayesian extension for Flux)
-# BFlux is meant to be an extension to Flux.jl, a machine learning 
-# library written entirely in Julia. BFlux will and is not meant to be the 
+# ## BayesFlux (Bayesian extension for Flux)
+# BayesFlux is meant to be an extension to Flux.jl, a machine learning 
+# library written entirely in Julia. BayesFlux will and is not meant to be the 
 # fastest production ready library, but rather is meant to make research and 
 # experimentation easy. 
 
-# BFlux is part of my Master Thesis in Economic and Financial Research -
+# BayesFlux is part of my Master Thesis in Economic and Financial Research -
 # specialisation Econometrics and will therefore likelily still go through some
 # revisions in the coming months. 
 
@@ -25,17 +25,17 @@ Random.seed!(6150533)
 #
 # Every Bayesian model can in general be broken down into the probablistic
 # model, which gives the likelihood function and the prior on all parameters of
-# the probabilistic model. BFlux somewhat follows this and splits every Bayesian
+# the probabilistic model. BayesFlux somewhat follows this and splits every Bayesian
 # Network into the following parts: 
 # 
 # 1. **Network**: Every BNN must have some general network structure. This is
 #    defined using Flux and currently supports Dense, RNN, and LSTM layers. More
 #    on this later
-# 2. **Network Constructor**: Since BFlux works with vectors of parameters, we
+# 2. **Network Constructor**: Since BayesFlux works with vectors of parameters, we
 #    need to be able to go from a vector to the network and back. This works by
 #    using the NetworkConstructor. 
 # 3. **Likelihood**: The likelihood function. In traditional estimation of NNs,
-#    this would correspond to the negative loss function. BFlux has a twist on
+#    this would correspond to the negative loss function. BayesFlux has a twist on
 #    this though and nomenclature might change because of this twist: The
 #    likelihood also contains all additional parameters and priors. For example,
 #    for a Gaussian likelihood, the likelihood object also defines the standard
@@ -46,7 +46,7 @@ Random.seed!(6150533)
 # 4. **Prior on network parameters**: A prior on all network parameters.
 #    Currently the RNN layers do not define priors on the initial state and thus
 #    the initial state is also not sampled. Priors can have hyper-priors. 
-# 5. **Initialiser**: Unless some special initialisation values are given, BFlux
+# 5. **Initialiser**: Unless some special initialisation values are given, BayesFlux
 #    will draw initial values as defined by the initialiser. An initialiser
 #    initialises all network and likelihood parameters to reasonable values.
 #
@@ -57,9 +57,9 @@ Random.seed!(6150533)
 # The examples and the sections below hopefully clarify everything. If any
 # questions remain, please open an issue. 
 
-# ## Linear Regression using BFlux
+# ## Linear Regression using BayesFlux
 #
-# Although not meant for Simple Linear Regression, BFlux can be used for it, and
+# Although not meant for Simple Linear Regression, BayesFlux can be used for it, and
 # we will do so in this section. This will hopefully demonstrate the basics.
 # Later sections will show better examples. 
 #
@@ -77,7 +77,7 @@ y = x'*β + randn(Float32, n);
 # 
 # This is a standard linear model and we would likely be better off using STAN
 # or Turing for this, but due to the availability of a Dense layer with linear
-# activation function, we can also implent it in BFlux. 
+# activation function, we can also implent it in BayesFlux. 
 #
 # The first step is to define the network. As mentioned above, the network
 # consists of a single Dense layer with a linear activation function (the
@@ -85,7 +85,7 @@ y = x'*β + randn(Float32, n);
 
 net = Chain(Dense(k, 1))  # k inputs and one output
 
-# Since BFlux works with vectors, we need to be able to transform a vector to
+# Since BayesFlux works with vectors, we need to be able to transform a vector to
 # the above network and back. We thus need a NetworkConstructor, which we obtain
 # as a the return value of a `destruct`
 
@@ -106,14 +106,14 @@ prior = GaussianPrior(nc, 0.5f0)  # the last value is the standard deviation
 
 # We also need a likelihood and a prior on all parameters the likelihood
 # introduces to the model. We will go for a Gaussian likelihood, which
-# introduces the standard deviation of the model. BFlux currently implements
+# introduces the standard deviation of the model. BayesFlux currently implements
 # Gaussian and Student-t likelihoods for Feedforward and Seq-to-one cases but
 # more can easily be implemented. See **TODO HAR link** for an example. 
 
 like = FeedforwardNormal(nc, Gamma(2.0, 0.5))  # Second argument is prior for standard deviation. 
 
-# Lastly, when no explicit initial value is given, BFlux will draw it from an
-# initialiser. Currently only one type of initialiser is implemented in BFlux,
+# Lastly, when no explicit initial value is given, BayesFlux will draw it from an
+# initialiser. Currently only one type of initialiser is implemented in BayesFlux,
 # but this can easily be extended by the user itself. 
 
 init = InitialiseAllSame(Normal(0.0f0, 0.5f0), like, prior)  # First argument is dist we draw parameters from.
@@ -133,7 +133,7 @@ bnn = BNN(x, y, like, prior, init)
 # 2. It can serve as a starting value for the MCMC samplers.
 #
 # To find a MAP estimate, we must first specify how we want to find it: We need
-# to define an optimiser. BFlux currently only implements optimisers derived
+# to define an optimiser. BayesFlux currently only implements optimisers derived
 # from Flux itself, but this can be extended by the user. 
 
 opt = FluxModeFinder(bnn, Flux.ADAM())  # We will use ADAM 
@@ -161,7 +161,7 @@ ch = mcmc(bnn, 10, 50_000, sampler)
 ch = ch[:, end-20_000+1:end]
 
 # We can obtain summary statistics and trace and density plots of network
-# parameters and likelihood parameters by transforming the BFlux chain into a
+# parameters and likelihood parameters by transforming the BayesFlux chain into a
 # MCMCChain. 
 
 using MCMCChains
@@ -245,7 +245,7 @@ plot!(x->x, t_q, label = "Target")
 # rather than draws from the posterior, since without any MH step, it is unclear
 # whether the chain actually will converge to the posterior. 
 #
-# BFlux also implements three methods that do apply a MH step and are thus
+# BayesFlux also implements three methods that do apply a MH step and are thus
 # easier to monitor. These are GGMC, AdaptiveMH, and HMC. Both GGMC and HMC do
 # allow for taking stochastic gradients. GGMC also allows to use delayed
 # acceptance in which the MH step is only applied after a couple of steps,
@@ -256,7 +256,7 @@ plot!(x->x, t_q, label = "Target")
 # (see .../STAN for details). Similarly, both also make use of mass matrices,
 # which can also be tuned. 
 #
-# BFlux implements both stepsize adapters and mass adapters but to this point
+# BayesFlux implements both stepsize adapters and mass adapters but to this point
 # does not implement a smart way of combining them (this will come in the
 # future). In my experience, naively combining them often only helps in more
 # complex models and thus we will only use a stepsize adapter here.  
@@ -338,7 +338,7 @@ plot!(x->x, t_q, label = "Target")
 
 # ### MCMC - Adaptive Metropolis-Hastings
 #
-# As a derivative free alternative, BFlux also implements Adaptive MH as
+# As a derivative free alternative, BayesFlux also implements Adaptive MH as
 # introduced in (...). This is currently quite a costly method for complex
 # models since it needs to evaluate the MH ratio at each step. Plans exist to
 # parallelise the calculation of the likelihood which should speed up Adaptive
@@ -367,7 +367,7 @@ plot!(x->x, t_q, label = "Target")
 # ### Variation Inference
 # 
 # In some cases MCMC method either do not work well or even the methods above
-# take too long. For these cases BFlux currently implements Bayes-By-Backprop
+# take too long. For these cases BayesFlux currently implements Bayes-By-Backprop
 # (...); One shortcoming of the current implementation is that the variational
 # family is constrained to a diagonal multivariate gaussian and thus any
 # correlations between network parameters are set to zero. This can cause
@@ -442,10 +442,10 @@ plot!(x->x, t_q, label = "Target")
 
 # ## Recurrent Structures 
 #
-# Next to Dense layers, BFlux also implements RNN and LSTM layers. These two do
+# Next to Dense layers, BayesFlux also implements RNN and LSTM layers. These two do
 # require some additional care though, since the layout of the data must be
 # adjusted. In general, the last dimension of `x` and `y` is always the
-# dimension along which BFlux batches. Thus, if we are in a seq-to-one setting
+# dimension along which BayesFlux batches. Thus, if we are in a seq-to-one setting
 # - seq-to-seq is not implemented itself but users can implement custom
 #   likelihoods to for a seq-to-seq setting - then the sequences must be along
 #   the last dimension (here the third). To demonstrate this, let us simulate
@@ -530,9 +530,9 @@ plot(t_q, o_q, label = "Posterior Predictive", legend=:topleft,
     xlab = "Target Quantile", ylab = "Observed Quantile")
 plot!(x->x, t_q, label = "Target")
 
-# # Customising BFlux
+# # Customising BayesFlux
 #
-# BFlux is coded in such a way that the user can easily extend many of the
+# BayesFlux is coded in such a way that the user can easily extend many of the
 # funcitonalities. The following are the easiest to extend and we will cover
 # them below: 
 #
@@ -554,8 +554,8 @@ plot!(x->x, t_q, label = "Target")
 #
 # ## Customising Layers 
 #
-# BFlux relies on the layers currently implemented in `Flux`. Thus, the first step
-# in implementing a new layer for BFlux is to implement a new layer for `Flux`.
+# BayesFlux relies on the layers currently implemented in `Flux`. Thus, the first step
+# in implementing a new layer for BayesFlux is to implement a new layer for `Flux`.
 # Once that is done, one must also implement a destruct method. For example, for
 # the Dense layer this has the following form 
  
@@ -579,7 +579,7 @@ end
 # parameter that should be trained/inferred and a function that given a vector
 # of the right length can restruct the layer. **Note: Flux also implements a
 # general destructure and restructure method. In my experience, this often
-# caused problems in AD and thus until this is more stable, BFlux will stick
+# caused problems in AD and thus until this is more stable, BayesFlux will stick
 # with this manual setup**. 
 #
 # Care must be taken when cells are recurrent. The actual layer is then not an
@@ -617,11 +617,11 @@ end
 #
 # ## Customising Priors
 #
-# BFlux implements priors as subtypes of the abstract type `NetworkPrior`.
-# Generally what happens when one calles `loglikeprior` is that BFlux splits the
+# BayesFlux implements priors as subtypes of the abstract type `NetworkPrior`.
+# Generally what happens when one calles `loglikeprior` is that BayesFlux splits the
 # vector into `θnet, θhyper, θlike` and calls the prior with `θnet` and
 # `θhyper`. The number of hyper-parameters is given in the prior type. As such,
-# BFlux in theory allows for simple to highly complex multi-level priors. The
+# BayesFlux in theory allows for simple to highly complex multi-level priors. The
 # hope is that this provides enough flexibility to encourage researchers to try
 # out different priors. *For more documentation, please see the docs for
 # `NetworkPrior` and for an example of a mixture scale prior check out the code
@@ -630,7 +630,7 @@ end
 # > :bangbang: Note that the prior defined here is only for the network. All
 # > additional priors for parameters needed by the likelihood are handled in the
 # > likelihood. This might at first sound odd, but nicely splits network
-# > specific things from likelihood specific things and thus should make BFlux
+# > specific things from likelihood specific things and thus should make BayesFlux
 # > more flexible.
 # 
 # ## Customising Likelihoods
@@ -638,7 +638,7 @@ end
 # Likelihoods are implemented as types extending the abstract type
 # `BNNLikelihood` and thus can be extended by implementing a new subtype.
 # Traditionally likelihood truly only refer to the likelihood. We decided to go
-# a somewhat unconventional way and decided to design BFlux in a way that
+# a somewhat unconventional way and decided to design BayesFlux in a way that
 # likelihood types also include the prior for all parameters they introduce.
 # This was done so that the network specification with priors and all is
 # separate from the likelihood specification. As such, these two parts can be
@@ -649,7 +649,7 @@ end
 # standard deviation of the
 # Gaussian, we will also estimate it, and thus we need a prior for it. While in
 # the traditional setting this would be covered in the prior type, here it is
-# covered in the likelihood type. Thus, the version as implemented in BFlux
+# covered in the likelihood type. Thus, the version as implemented in BayesFlux
 # takes upon construction also a prior distribution that shall be used for the
 # standard deviation. This prior does not have to have as its domain the real
 # line. It can also be constrained, such as a Gamma distribution, as long as the

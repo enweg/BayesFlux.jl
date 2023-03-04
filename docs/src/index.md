@@ -1,7 +1,7 @@
-# BFlux.jl a Bayesian extension to [Flux.jl](https://fluxml.ai)
+# BayesFlux.jl a Bayesian extension to [Flux.jl](https://fluxml.ai)
 
 ````julia
-using BFlux, Flux
+using BayesFlux, Flux
 using Random, Distributions
 using StatsPlots
 using LinearAlgebra
@@ -10,17 +10,17 @@ Random.seed!(6150533)
 ````
 
 ```@meta
-CurrentModule = BFlux
+CurrentModule = BayesFlux
 DocTestSetup = quote
-    using BFlux
+    using BayesFlux
 end
 ```
 
-BFlux is meant to be an extension to Flux.jl, a machine learning library written
-entirely in Julia. BFlux will and is not meant to be the fastest production
+BayesFlux is meant to be an extension to Flux.jl, a machine learning library written
+entirely in Julia. BayesFlux will and is not meant to be the fastest production
 ready library, but rather is meant to make research and experimentation easy.
 
-BFlux is part of my Master Thesis in Economic and Financial Research -
+BayesFlux is part of my Master Thesis in Economic and Financial Research -
 specialisation Econometrics at Maastricht University and will therefore likely
 still go through some revisions in the coming months.
 
@@ -28,17 +28,17 @@ still go through some revisions in the coming months.
 
 Every Bayesian model can in general be broken down into the probabilistic
 model, which gives the likelihood function and the prior on all parameters of
-the probabilistic model. BFlux somewhat follows this and splits every Bayesian
+the probabilistic model. BayesFlux somewhat follows this and splits every Bayesian
 Network into the following parts:
 
 1. **Network**: Every BNN must have some general network structure. This is
    defined using Flux and currently supports Dense, RNN, and LSTM layers. More
    on this later
-2. **Network Constructor**: Since BFlux works with vectors of parameters, we
+2. **Network Constructor**: Since BayesFlux works with vectors of parameters, we
    need to be able to go from a vector to the network and back. This works by
    using the NetworkConstructor.
 3. **Likelihood**: The likelihood function. In traditional estimation of NNs,
-   this would correspond to the negative loss function. BFlux has a twist on
+   this would correspond to the negative loss function. BayesFlux has a twist on
    this though and nomenclature might change because of this twist: The
    likelihood also contains all additional parameters and priors. For example,
    for a Gaussian likelihood, the likelihood object also defines the standard
@@ -49,7 +49,7 @@ Network into the following parts:
 4. **Prior on network parameters**: A prior on all network parameters.
    Currently the RNN layers do not define priors on the initial state and thus
    the initial state is also not sampled. Priors can have hyper-priors.
-5. **Initialiser**: Unless some special initialisation values are given, BFlux
+5. **Initialiser**: Unless some special initialisation values are given, BayesFlux
    will draw initial values as defined by the initialiser. An initialiser
    initialises all network and likelihood parameters to reasonable values.
 

@@ -1,6 +1,6 @@
 # Example: Linear Regression
 
-Although not meant for Simple Linear Regression, BFlux can be used for it, and
+Although not meant for Simple Linear Regression, BayesFlux can be used for it, and
 we will do so in this section. This will hopefully demonstrate the basics.
 Later sections will show better examples.
 
@@ -19,7 +19,7 @@ y = x'*β + randn(Float32, n);
 
 This is a standard linear model and we would likely be better off using STAN
 or Turing for this, but due to the availability of a Dense layer with linear
-activation function, we can also implement it in BFlux.
+activation function, we can also implement it in BayesFlux.
 
 The first step is to define the network. As mentioned above, the network
 consists of a single Dense layer with a linear activation function (the
@@ -29,7 +29,7 @@ default activation in Flux and hence not explicitly shown).
 net = Chain(Dense(k, 1))  # k inputs and one output
 ````
 
-Since BFlux works with vectors, we need to be able to transform a vector to
+Since BayesFlux works with vectors, we need to be able to transform a vector to
 the above network and back. We thus need a NetworkConstructor, which we obtain
 as a the return value of a `destruct`
 
@@ -56,7 +56,7 @@ prior = GaussianPrior(nc, 0.5f0)  # the last value is the standard deviation
 
 We also need a likelihood and a prior on all parameters the likelihood
 introduces to the model. We will go for a Gaussian likelihood, which
-introduces the standard deviation of the model. BFlux currently implements
+introduces the standard deviation of the model. BayesFlux currently implements
 Gaussian and Student-t likelihoods for Feedforward and Seq-to-one cases but
 more can easily be implemented.
 
@@ -64,7 +64,7 @@ more can easily be implemented.
 like = FeedforwardNormal(nc, Gamma(2.0, 0.5))  # Second argument is prior for standard deviation.
 ````
 
-Lastly, when no explicit initial value is given, BFlux will draw it from an
+Lastly, when no explicit initial value is given, BayesFlux will draw it from an
 initialiser. Currently only one type of initialiser is implemented,
 but this can easily be extended by the user itself.
 
@@ -89,7 +89,7 @@ purposes:
 2. It can serve as a starting value for the MCMC samplers.
 
 To find a MAP estimate, we must first specify how we want to find it: We need
-to define an optimiser. BFlux currently only implements optimisers derived
+to define an optimiser. BayesFlux currently only implements optimisers derived
 from Flux itself, but this can be extended by the user.
 
 ````julia
@@ -123,7 +123,7 @@ ch = ch[:, end-20_000+1:end]
 ````
 
 We can obtain summary statistics and trace and density plots of network
-parameters and likelihood parameters by transforming the BFlux chain into a
+parameters and likelihood parameters by transforming the BayesFlux chain into a
 MCMCChain.
 
 ````julia
@@ -217,7 +217,7 @@ SGNHTS should perhaps rather be considered as giving an ensemble of models
 rather than draws from the posterior, since without any MH step, it is unclear
 whether the chain actually will converge to the posterior.
 
-BFlux also implements three methods that do apply a MH step and are thus
+BayesFlux also implements three methods that do apply a MH step and are thus
 easier to monitor. These are GGMC, AdaptiveMH, and HMC. Both GGMC and HMC do
 allow for taking stochastic gradients. GGMC also allows to use delayed
 acceptance in which the MH step is only applied after a couple of steps,
@@ -227,7 +227,7 @@ Because both GGMC and HMC use a MH step, they provide a measure of the mean
 acceptance rate, which can be used to tune the stepsize using Dual Averaging
 (see [`DualAveragingStepSize`](@ref) details). Similarly, both also make use of mass matrices, which can also be tuned (see [`MassAdapter`](@ref)).
 
-BFlux implements both stepsize adapters and mass adapters but to this point
+BayesFlux implements both stepsize adapters and mass adapters but to this point
 does not implement a smart way of combining them (this will come in the
 future). In my experience, naively combining them often only helps in more
 complex models and thus we will only use a stepsize adapter here.
@@ -326,7 +326,7 @@ plot!(x->x, t_q, label = "Target")
 
 ### MCMC - Adaptive Metropolis-Hastings
 
-As a derivative free alternative, BFlux also implements Adaptive MH as
+As a derivative free alternative, BayesFlux also implements Adaptive MH as
 introduced (see [`AdaptiveMH`](@ref)). This is currently quite a costly method
 for complex models since it needs to evaluate the MH ratio at each step. Plans
 exist to parallelise the calculation of the likelihood which should speed up
@@ -361,7 +361,7 @@ plot!(x->x, t_q, label = "Target")
 ### Variation Inference
 
 In some cases MCMC method either do not work well or even the methods above take
-too long. For these cases BFlux currently implements Bayes-By-Backprop (see
+too long. For these cases BayesFlux currently implements Bayes-By-Backprop (see
 [`bbb`](@ref)); One shortcoming of the current implementation is that the
 variational family is constrained to a diagonal multivariate gaussian and thus
 any correlations between network parameters are set to zero. This can cause

@@ -5,7 +5,7 @@
 # a network of the same structure as the original network with the parameters
 # being taken from the input vector. 
 using Flux
-using BFlux
+using BayesFlux
 
 @testset "Destruct" begin
     @testset "destruct Dense" for in = 1:3

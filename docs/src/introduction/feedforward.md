@@ -14,7 +14,7 @@ y = x'*β + randn(Float32, n);
 
 While some might think this will change a lot, given that the
 model we are estimating is a lot more complicated than a linear regression
-model, BFlux abstracts away all of this and all that changes is the network
+model, BayesFlux abstracts away all of this and all that changes is the network
 definition. 
 
 ````julia

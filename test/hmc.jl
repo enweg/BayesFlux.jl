@@ -1,5 +1,5 @@
 # Testing HMC
-using BFlux
+using BayesFlux
 using Flux, Distributions, Random
 using LinearAlgebra
 
@@ -47,7 +47,7 @@ function test_HMC_regression(madapter; k=5, n=10_000)
     test3 = 0.9f0 <= mean(exp.(ch_short[end, :])) <= 1.1f0
 
     # Continue sampling
-    test4 = BFlux.calculate_epochs(sampler, 100, 25_000; continue_sampling=true) == 50 * leapfrog_steps
+    test4 = BayesFlux.calculate_epochs(sampler, 100, 25_000; continue_sampling=true) == 50 * leapfrog_steps
     ch_longer = mcmc(bnn, 1000, 25_000, sampler; continue_sampling=true)
     test5 = all(ch_longer[:, 1:20_000] .== ch)
 

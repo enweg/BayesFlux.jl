@@ -2,7 +2,7 @@
 # at least the fields `num_params_likelihood::Int` and `nc<:NetConstructor`.
 using Distributions
 using Flux
-using BFlux
+using BayesFlux
 using Bijectors
 
 Random.seed!(6150533)

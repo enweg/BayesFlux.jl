@@ -1,5 +1,5 @@
 # Testing SGNHT-S
-using BFlux
+using BayesFlux
 using Flux, Distributions, Random
 
 function test_SGNHTS_regression(; k=5, n=10_000)
@@ -35,7 +35,7 @@ function test_SGNHTS_regression(; k=5, n=10_000)
     test3 = 0.9f0 <= mean(exp.(ch_short[end, :])) <= 1.1f0
 
     # Continue sampling
-    test4 = BFlux.calculate_epochs(sampl, 100, 25_000; continue_sampling=true) == 50
+    test4 = BayesFlux.calculate_epochs(sampl, 100, 25_000; continue_sampling=true) == 50
     ch_longer = mcmc(bnn, 1000, 25_000, sampl; continue_sampling=true)
     test5 = all(ch_longer[:, 1:20_000] .== ch)
 

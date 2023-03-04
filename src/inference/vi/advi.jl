@@ -1,5 +1,5 @@
 ################################################################################
-# ADVI for BFlux
+# ADVI for BayesFlux
 # FIXME: Something goes wrong using ADVI and empty vectors (θhyper)
 ################################################################################
 using AdvancedVI, DistributionsAD
