@@ -22,6 +22,8 @@ println("Hostname: $(gethostname())")
     include("./modes.jl")
     # Posterior Predictive Draws
     include("./posterior_predict.jl")
+    # Checking whether all derivatives work. See issue #6
+    include("./derivatives.jl")
 
     # Tests after this line are reduced in the number of samples when run 
     # on GitHub actions. 

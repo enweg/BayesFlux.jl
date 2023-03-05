@@ -70,7 +70,7 @@ Random.seed!(6150533)
 
     @testset "Gaussian" for rnn in [RNN, LSTM]
 
-        net = Chain(RNN(10, 10), Dense(10, 1))
+        net = Chain(rnn(10, 10), Dense(10, 1))
         nc = destruct(net)
         gl = SeqToOneNormal(nc, Gamma(2.0, 2.0))
 
