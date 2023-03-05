@@ -57,11 +57,11 @@ function destruct(cell::Flux.Recur{R}) where {R<:Flux.LSTMCell}
         # s += pb 
         # pstate01 = length(state0[1])
         # new_state01 = reshape(θ[s:s+pstate01-1], size(state0[1]))
-        new_state01 = T.(state0[1])
+        new_state01 = zeros(T, size(state0[1]))
         # s += pstate01 
         # pstate02 = length(state0[2])
         # new_state02 = reshape(θ[s:s+pstate02-1], size(state0[2]))
-        new_state02 = T.(state0[2])
+        new_state02 = zeros(T, size(state0[2]))
         return Flux.Recur(Flux.LSTMCell(new_Wi, new_Wh, new_b, (new_state01, new_state02)))
     end
     return θ, re
