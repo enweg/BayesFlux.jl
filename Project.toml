@@ -1,7 +1,7 @@
 name = "BayesFlux"
 uuid = "c2416e8a-86ea-414a-9a91-c37c770c1547"
 authors = ["Enrico Wegner <wegner1996@gmail.com>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 Bijectors = "76274a88-744f-5084-9051-94815aaf08c4"
