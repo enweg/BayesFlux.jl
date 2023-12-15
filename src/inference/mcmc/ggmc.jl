@@ -98,7 +98,7 @@ function initialise!(
     θ::AbstractVector{T}, 
     nsamples; 
     continue_sampling=false
-) where {T,S,M}
+) where {T}
 
     samples = Matrix{T}(undef, length(θ), nsamples)
     accepted = zeros(Int, nsamples)
@@ -127,7 +127,7 @@ function calculate_epochs(
     nbatches, 
     nsamples; 
     continue_sampling=false
-) where {T,S,M}
+) where {T}
 
     n_newsamples = continue_sampling ? nsamples - s.nsampled : nsamples
     epochs = ceil(Int, n_newsamples / nbatches)
@@ -137,7 +137,7 @@ end
 
 K(m, Minv) = 1 / 2 * m' * Minv * m
 
-function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T,S,M}
+function update!(s::GGMC{T}, θ::AbstractVector{T}, bnn::BNN, ∇θ) where {T}
 
     γ = -sqrt(length(bnn.y) / s.l) * log(s.β)
     h = sqrt(s.l / length(bnn.y))
